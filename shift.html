@@ -1,0 +1,159 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>週間シフト提出</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 20px 14px;
+      background: #f5f6f8;
+      color: #222;
+      font-family: -apple-system, sans-serif;
+    }
+    .card {
+      max-width: 480px;
+      margin: 15px auto;
+      padding: 24px 18px;
+      background: white;
+      border-radius: 18px;
+    }
+    h2 { text-align: center; }
+    .status {
+      padding: 14px;
+      background: #f1f3f6;
+      border-radius: 10px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .day {
+      padding: 14px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .day label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+    select {
+      width: 100%;
+      padding: 13px;
+      font-size: 16px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      background: white;
+    }
+    button {
+      width: 100%;
+      padding: 16px;
+      margin-top: 22px;
+      background: #06c755;
+      border: 0;
+      border-radius: 10px;
+      color: white;
+      font-size: 17px;
+      font-weight: bold;
+    }
+    button:disabled { background: #ccc; }
+    .note {
+      color: #777;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>週間シフト提出</h2>
+    <div id="status" class="status">LINE認証を確認中...</div>
+    <div id="week"></div>
+    <button id="submit" disabled>シフトを確認する</button>
+    <p class="note">
+      ※ 現在はテスト画面です。<br>
+      スプレッドシートへの送信はまだ行いません。
+    </p>
+    <p id="result"></p>
+  </div>
+
+  <script>
+    const LIFF_ID = '2012188437-CoSEkbeN';
+    const statusEl = document.getElementById('status');
+    const weekEl = document.getElementById('week');
+    const submitBtn = document.getElementById('submit');
+    const resultEl = document.getElementById('result');
+    const choices = ['休み','21:00','21:30','22:00','22:30','23:00'];
+    const weekdays = ['日','月','火','水','木','金','土'];
+    const dates = [];
+
+    function makeWeek() {
+      const today = new Date();
+      const monday = new Date(today);
+      const daysUntilNextMonday = (8 - today.getDay()) % 7 || 7;
+      monday.setDate(today.getDate() + daysUntilNextMonday);
+
+      for (let i = 0; i < 6; i++) {
+        const date = new Date(monday);
+        date.setDate(monday.getDate() + i);
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        dates.push(`${y}-${m}-${d}`);
+
+        const div = document.createElement('div');
+        div.className = 'day';
+        const label = document.createElement('label');
+        label.textContent = `${date.getMonth()+1}/${date.getDate()}（${weekdays[date.getDay()]}）`;
+        const select = document.createElement('select');
+        select.id = 'shift' + i;
+        choices.forEach(value => {
+          const option = document.createElement('option');
+          option.value = value;
+          option.textContent = value;
+          select.appendChild(option);
+        });
+        div.appendChild(label);
+        div.appendChild(select);
+        weekEl.appendChild(div);
+      }
+    }
+
+    async function start() {
+      makeWeek();
+      try {
+        await Promise.race([
+          liff.init({ liffId: LIFF_ID }),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('認証タイムアウト')), 10000)
+          )
+        ]);
+        if (!liff.isLoggedIn()) {
+          statusEl.textContent = 'LINEから開いてログインしてください';
+          return;
+        }
+        const profile = await liff.getProfile();
+        statusEl.textContent = 'LINE認証済み：' + profile.displayName;
+        submitBtn.disabled = false;
+      } catch (error) {
+        statusEl.textContent = '認証エラー：' + error.message;
+      }
+    }
+
+    submitBtn.addEventListener('click', () => {
+      const shifts = dates.map((date, i) => ({
+        date,
+        time: document.getElementById('shift' + i).value
+      }));
+      resultEl.textContent = shifts
+        .map(s => s.date + '：' + s.time)
+        .join(' / ');
+      alert('6日間のシフトを確認できました！（テスト）');
+    });
+
+    start();
+  </script>
+</body>
+</html>
