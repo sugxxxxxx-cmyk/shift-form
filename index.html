@@ -1,0 +1,54 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>週間シフト提出</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f5f6f8;
+      padding: 24px;
+      text-align: center;
+    }
+    h2 { margin-top: 40px; }
+    #status { margin-top: 24px; }
+  </style>
+</head>
+<body>
+  <h2>週間シフト提出</h2>
+  <p id="status">LINE認証を準備中...</p>
+
+  <script>
+    const LIFF_ID = '2012188437-CoSEkbeN';
+    const status = document.getElementById('status');
+
+    async function start() {
+      try {
+        if (typeof liff === 'undefined') {
+          throw new Error('LIFF SDKを読み込めませんでした');
+        }
+
+        status.textContent = 'LINE認証中...';
+
+        await liff.init({ liffId: LIFF_ID });
+
+        if (!liff.isLoggedIn()) {
+          status.textContent = 'LINEログインが必要です';
+          return;
+        }
+
+        status.textContent = 'LINE認証成功！';
+        status.style.color = 'green';
+      } catch (error) {
+        status.textContent = 'エラー：' + error.message;
+        status.style.color = 'red';
+      }
+    }
+
+    start();
+  </script>
+</body>
+</html>
