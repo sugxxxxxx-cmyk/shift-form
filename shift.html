@@ -138,7 +138,10 @@
         statusEl.textContent = 'LINE認証済み：' + profile.displayName;
         submitBtn.disabled = false;
       } catch (error) {
-        statusEl.textContent = '認証エラー：' + error.message;
+        statusEl.textContent =
+  '認証エラー：' + error.message +
+  ' / コード：' + (error.code || 'なし') +
+  ' / 使用ID：' + LIFF_ID;
       }
     }
 
