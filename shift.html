@@ -64,6 +64,10 @@
       font-size: 13px;
       line-height: 1.6;
     }
+    #result {
+      white-space: pre-line;
+      line-height: 1.8;
+    }
   </style>
 </head>
 <body>
@@ -73,48 +77,70 @@
     <div id="week"></div>
     <button id="submit" disabled>シフトを確認する</button>
     <p class="note">
-      ※ 現在はテスト画面です。<br>
-      スプレッドシートへの送信はまだ行いません。
+      ※ 月曜〜土曜の6日分を選択してください。<br>
+      ※ 提出後の変更は、再提出で上書きできます。
     </p>
     <p id="result"></p>
   </div>
 
   <script>
     const LIFF_ID = '2012188437-eiZISGvR';
+
+    const API_URL =
+      'https://script.google.com/macros/s/AKfycbzp3OJOz1hJfg-9fVt2FHGsDj1aCqGgww4mzQzgBRbulxp_kE2FQH8B-EkDK9AeyZ42/exec';
+
     const statusEl = document.getElementById('status');
     const weekEl = document.getElementById('week');
     const submitBtn = document.getElementById('submit');
     const resultEl = document.getElementById('result');
-    const choices = ['休み','21:00','21:30','22:00','22:30','23:00'];
+
+    const choices = [
+      '休み', '21:00', '21:30',
+      '22:00', '22:30', '23:00'
+    ];
+
     const weekdays = ['日','月','火','水','木','金','土'];
     const dates = [];
+
+    let sending = false;
 
     function makeWeek() {
       const today = new Date();
       const monday = new Date(today);
-      const daysUntilNextMonday = (8 - today.getDay()) % 7 || 7;
-      monday.setDate(today.getDate() + daysUntilNextMonday);
+      const daysUntilNextMonday =
+        (8 - today.getDay()) % 7 || 7;
+
+      monday.setDate(
+        today.getDate() + daysUntilNextMonday
+      );
 
       for (let i = 0; i < 6; i++) {
         const date = new Date(monday);
         date.setDate(monday.getDate() + i);
+
         const y = date.getFullYear();
         const m = String(date.getMonth() + 1).padStart(2, '0');
         const d = String(date.getDate()).padStart(2, '0');
+
         dates.push(`${y}-${m}-${d}`);
 
         const div = document.createElement('div');
         div.className = 'day';
+
         const label = document.createElement('label');
-        label.textContent = `${date.getMonth()+1}/${date.getDate()}（${weekdays[date.getDay()]}）`;
+        label.textContent =
+          `${date.getMonth()+1}/${date.getDate()}（${weekdays[date.getDay()]}）`;
+
         const select = document.createElement('select');
         select.id = 'shift' + i;
+
         choices.forEach(value => {
           const option = document.createElement('option');
           option.value = value;
           option.textContent = value;
           select.appendChild(option);
         });
+
         div.appendChild(label);
         div.appendChild(select);
         weekEl.appendChild(div);
@@ -123,37 +149,99 @@
 
     async function start() {
       makeWeek();
+
       try {
         await Promise.race([
           liff.init({ liffId: LIFF_ID }),
           new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('認証タイムアウト')), 10000)
+            setTimeout(
+              () => reject(new Error('認証タイムアウト')),
+              10000
+            )
           )
         ]);
+
         if (!liff.isLoggedIn()) {
-          statusEl.textContent = 'LINEから開いてログインしてください';
+          statusEl.textContent =
+            'LINEから開いてログインしてください';
           return;
         }
+
         const profile = await liff.getProfile();
-        statusEl.textContent = 'LINE認証済み：' + profile.displayName;
+        statusEl.textContent =
+          'LINE認証済み：' + profile.displayName;
+
         submitBtn.disabled = false;
+
       } catch (error) {
         statusEl.textContent =
-  '認証エラー：' + error.message +
-  ' / コード：' + (error.code || 'なし') +
-  ' / 使用ID：' + LIFF_ID;
+          '認証エラー：' + error.message +
+          ' / コード：' + (error.code || 'なし') +
+          ' / 使用ID：' + LIFF_ID;
       }
     }
 
-    submitBtn.addEventListener('click', () => {
-      const shifts = dates.map((date, i) => ({
+    function getShifts() {
+      return dates.map((date, i) => ({
         date,
         time: document.getElementById('shift' + i).value
       }));
-      resultEl.textContent = shifts
+    }
+
+    submitBtn.addEventListener('click', async () => {
+      if (sending) return;
+
+      const shifts = getShifts();
+
+      const summary = shifts
         .map(s => s.date + '：' + s.time)
-        .join(' / ');
-      alert('6日間のシフトを確認できました！（テスト）');
+        .join('\n');
+
+      const confirmed = confirm(
+        'この内容でシフトを提出しますか？\n\n' + summary
+      );
+
+      if (!confirmed) return;
+
+      const idToken = liff.getIDToken();
+
+      if (!idToken) {
+        alert('LINE認証情報を取得できませんでした。開き直してください。');
+        return;
+      }
+
+      sending = true;
+      submitBtn.disabled = true;
+      submitBtn.textContent = '送信中...';
+      resultEl.textContent = '';
+
+      try {
+        await fetch(API_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: {
+            'Content-Type': 'text/plain;charset=UTF-8'
+          },
+          body: JSON.stringify({
+            action: 'submitWeekShift',
+            idToken: idToken,
+            shifts: shifts
+          })
+        });
+
+        resultEl.textContent =
+          '送信処理を実行しました。\n' +
+          '保存結果は管理者側のスプレッドシートで確認してください。\n\n' +
+          summary;
+
+      } catch (error) {
+        resultEl.textContent =
+          '通信エラーが発生しました：' + error.message;
+      } finally {
+        sending = false;
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'シフトを確認する';
+      }
     });
 
     start();
