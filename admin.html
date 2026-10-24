@@ -3,90 +3,133 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>キャストシフト管理</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>シフト管理 | Virgo</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#f4f6fa;color:#202b3a;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
-header{background:#131c2d;color:white;padding:20px 16px;font-size:21px;font-weight:bold}
-header small{font-size:11px;color:#aeb8c9;margin-left:8px}
-main{max-width:1000px;margin:auto}
-.week{display:flex;align-items:center;justify-content:space-between;background:white;padding:14px;gap:8px}
-.week strong{font-size:18px}
-button{border:1px solid #dce2eb;background:white;border-radius:10px;padding:12px;font-size:15px;cursor:pointer}
-.arrow{font-size:20px;width:48px}
+header{background:#131c2d;color:#fff;padding:17px 16px}
+header h1{font-size:20px;margin:0}
+header small{font-size:11px;color:#b9c5d5}
+nav{display:flex;background:#fff;border-bottom:1px solid #e2e7ef}
+nav a{flex:1;text-align:center;text-decoration:none;color:#667085;padding:15px 4px;font-size:13px;font-weight:bold}
+nav a.active{color:#087a4a;border-bottom:3px solid #087a4a}
+main{max-width:1050px;margin:auto}
+.week{display:flex;justify-content:space-between;align-items:center;background:#fff;padding:14px;gap:10px}
+.week strong{font-size:17px}
+button{background:#fff;border:1px solid #dce2eb;border-radius:9px;padding:11px;font-size:14px;cursor:pointer}
 .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px}
-.metric{background:white;border-radius:12px;text-align:center;padding:13px 5px}
+.metric{background:#fff;border-radius:12px;text-align:center;padding:15px 5px}
 .metric span{display:block;font-size:12px;color:#667085}
-.metric b{display:block;font-size:25px;margin-top:4px}
-.controls{display:flex;gap:8px;padding:4px 12px 12px}
-input{flex:1;min-width:0;border:1px solid #dce2eb;border-radius:10px;padding:12px;font-size:16px}
-#filter{white-space:nowrap}
-.table-wrap{overflow-x:auto;background:white;border-top:1px solid #e5e9ef;border-bottom:1px solid #e5e9ef}
-table{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%}
-th,td{border-right:1px solid #e6e9ef;border-bottom:1px solid #e6e9ef;text-align:center;padding:0;min-width:86px;height:51px}
-thead th{height:58px;background:#f0f3f8;font-size:13px;position:sticky;top:0;z-index:2}
-th:first-child,td:first-child{position:sticky;left:0;min-width:110px;max-width:110px;background:white;z-index:3;text-align:left;padding:0 10px;font-weight:600;font-size:13px}
-thead th:first-child{background:#f0f3f8;z-index:4}
-thead .count{display:block;font-size:12px;color:#16804c;margin-top:5px}
-.cell{display:flex;align-items:center;justify-content:center;height:43px;margin:3px;border-radius:5px;font-size:13px;font-weight:bold}
-.work{background:#d8f8e5;color:#087a3f}
-.off{background:#f0f1f4;color:#9299a5}
+.metric b{display:block;font-size:27px;margin-top:5px}
+.section{background:#fff;margin:12px;border-radius:12px;padding:16px}
+.section h2{font-size:17px;margin:0 0 12px}
+.row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #edf0f4;gap:10px}
+.row:last-child{border:0}
+.badge{border-radius:20px;padding:6px 10px;font-size:12px;font-weight:bold}
+.done{background:#d8f8e5;color:#087a3f}
 .missing{background:#ffe3e5;color:#d33b48}
-.legend{display:flex;flex-wrap:wrap;gap:14px;padding:16px;font-size:12px;color:#566171}
-.legend i{display:inline-block;width:13px;height:13px;border-radius:3px;vertical-align:middle;margin-right:4px}
-.note{font-size:12px;color:#737e8e;padding:0 15px 25px;line-height:1.7}
+input,select{border:1px solid #dce2eb;border-radius:8px;padding:10px;font-size:15px;max-width:100%}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.controls input{flex:1;min-width:140px}
+.edit-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:12px 0}
+.edit-row label{font-size:12px;color:#667085}
+.edit-row select,.edit-row input{width:100%;margin-top:5px}
+.primary{background:#087a4a;color:#fff;border:0;font-weight:bold}
+.note{font-size:12px;color:#737e8e;line-height:1.7;padding:0 16px 20px}
+@media(max-width:600px){
+ .edit-row{grid-template-columns:1fr}
+ .week strong{font-size:14px}
+}
 </style>
 </head>
 <body>
+<header>
+<h1>キャストシフト管理</h1>
+<small>Virgo Shift Manager ・ DEMO</small>
+</header>
 
-<header>キャストシフト <small>DEMO</small></header>
+<nav>
+<a href="shift-view.html">シフト一覧</a>
+<a href="admin.html" class="active">シフト管理</a>
+<a href="staff.html">スタッフ管理</a>
+</nav>
 
-<div id="loginArea" style="padding:24px;text-align:center;background:white">
-  <h3>管理者ログイン</h3>
-  <p>Googleアカウントでログインしてください</p>
-  <div id="googleButton" style="display:flex;justify-content:center"></div>
-  <p id="loginStatus" style="font-size:13px;color:#667085"></p>
-</div>
-
-<main id="adminMain" style="display:none">
-
+<main>
 <div class="week">
-<button class="arrow" onclick="changeWeek(-1)">◀</button>
+<button onclick="changeWeek(-1)">◀</button>
+<div style="text-align:center">
 <strong id="weekTitle"></strong>
-<button class="arrow" onclick="changeWeek(1)">▶</button>
+<div><button onclick="goThisWeek()" style="padding:5px 10px;margin-top:5px;font-size:12px">今週</button></div>
 </div>
+<button onclick="changeWeek(1)">▶</button>
+</div>
+
 <div class="summary">
 <div class="metric"><span>登録人数</span><b id="total">0</b></div>
-<div class="metric"><span>提出済み</span><b id="done" style="color:#07844a">0</b></div>
+<div class="metric"><span>提出済み</span><b id="done" style="color:#087a4a">0</b></div>
 <div class="metric"><span>未提出</span><b id="missing" style="color:#dc4450">0</b></div>
 </div>
+
+<div class="section">
+<h2>提出状況</h2>
 <div class="controls">
 <input id="search" placeholder="キャスト名で検索" oninput="render()">
 <button id="filter" onclick="toggleFilter()">未提出のみ</button>
 </div>
-<div class="table-wrap">
-<table>
-<thead id="thead"></thead>
-<tbody id="tbody"></tbody>
-</table>
+<div id="submissionList"></div>
 </div>
-<div class="legend">
-<span><i style="background:#d8f8e5"></i>出勤予定</span>
-<span><i style="background:#f0f1f4"></i>休み</span>
-<span><i style="background:#ffe3e5"></i>未提出</span>
+
+<div class="section">
+<h2>シフト修正（デモ）</h2>
+<p style="font-size:13px;color:#667085">
+キャスト・曜日・時間を選んで修正できます。
+</p>
+<div class="edit-row">
+<div>
+<label>キャスト</label>
+<select id="cast"></select>
 </div>
+<div>
+<label>曜日</label>
+<select id="day">
+<option value="0">月曜日</option>
+<option value="1">火曜日</option>
+<option value="2">水曜日</option>
+<option value="3">木曜日</option>
+<option value="4">金曜日</option>
+<option value="5">土曜日</option>
+</select>
+</div>
+<div>
+<label>出勤時間</label>
+<select id="time">
+<option value="21:00">21:00</option>
+<option value="21:30">21:30</option>
+<option value="22:00">22:00</option>
+<option value="22:30">22:30</option>
+<option value="23:00">23:00</option>
+<option value="休み">休み</option>
+</select>
+</div>
+</div>
+<button class="primary" onclick="saveShift()">この内容で修正</button>
+<p id="message" style="font-size:13px;color:#087a4a"></p>
+</div>
+
 <p class="note">
-※ これは架空データを使用したデモ画面です。<br>
-※ 実際のキャスト情報・Googleスプレッドシートとはまだ接続していません。
+※ 架空データを使用したデモです。<br>
+※ 修正はこのページ内の表示だけに反映され、スプレッドシートやシフト一覧ページには保存されません。<br>
+※ 実際のキャスト情報とは接続していません。
 </p>
 </main>
+
 <script>
 const names=[
 'さくら','花子','美咲','あかり','ゆい','りな',
 'みお','れいな','なな','ひなた','あおい','あすか'
 ];
-const samples=[
+const baseSamples=[
 ['21:00','21:00','休み','22:00','21:00','21:30'],
 ['休み','21:30','21:00','21:00','22:00','21:00'],
 ['22:00','休み','21:00','21:30','21:00','休み'],
@@ -100,23 +143,21 @@ null,
 ['21:00','休み','22:30','21:00','21:30','休み'],
 ['22:00','21:00','21:30','休み','21:00','22:30']
 ];
+let samples=baseSamples.map(s=>s?[...s]:null);
 let weekOffset=0;
 let onlyMissing=false;
-const weekdays=['月','火','水','木','金','土'];
+
 function mondayOfWeek(offset){
- const now=new Date();
- now.setHours(12,0,0,0);
- const days=(now.getDay()+6)%7;
- now.setDate(now.getDate()-days+offset*7);
- return now;
+ const d=new Date();
+ d.setHours(12,0,0,0);
+ d.setDate(d.getDate()-(d.getDay()+6)%7+offset*7);
+ return d;
 }
 function dateText(d){
  return (d.getMonth()+1)+'/'+d.getDate();
 }
-function changeWeek(n){
- weekOffset+=n;
- render();
-}
+function changeWeek(n){weekOffset+=n;render()}
+function goThisWeek(){weekOffset=0;render()}
 function toggleFilter(){
  onlyMissing=!onlyMissing;
  document.getElementById('filter').textContent=
@@ -124,71 +165,45 @@ function toggleFilter(){
  render();
 }
 function render(){
- const monday=mondayOfWeek(weekOffset);
- const saturday=new Date(monday);
- saturday.setDate(monday.getDate()+5);
+ const mon=mondayOfWeek(weekOffset);
+ const sat=new Date(mon);
+ sat.setDate(mon.getDate()+5);
  document.getElementById('weekTitle').textContent=
- dateText(monday)+' 〜 '+dateText(saturday);
- const submitted=samples.filter(x=>x!==null).length;
+ dateText(mon)+' 〜 '+dateText(sat);
+
  document.getElementById('total').textContent=names.length;
+ const submitted=samples.filter(s=>s!==null).length;
  document.getElementById('done').textContent=submitted;
  document.getElementById('missing').textContent=names.length-submitted;
- let head='<tr><th>キャスト<br>'+names.length+'人</th>';
- for(let i=0;i<6;i++){
-  const date=new Date(monday);
-  date.setDate(monday.getDate()+i);
-  const count=samples.filter(s=>s&&s[i]!=='休み').length;
-  head+='<th>'+dateText(date)+'('+weekdays[i]+')'
-   +'<span class="count">出勤 '+count+'人</span></th>';
- }
- head+='</tr>';
- document.getElementById('thead').innerHTML=head;
+
  const query=document.getElementById('search').value.trim();
  let html='';
- names.forEach((name,index)=>{
-  const shift=samples[index];
+ names.forEach((name,i)=>{
+  const shift=samples[i];
   if(onlyMissing&&shift!==null)return;
   if(!name.includes(query))return;
-  html+='<tr><td>'+name+'</td>';
-  for(let i=0;i<6;i++){
-   const value=shift?shift[i]:'未';
-   const cls=!shift?'missing':value==='休み'?'off':'work';
-   html+='<td><div class="cell '+cls+'">'+value+'</div></td>';
-  }
-  html+='</tr>';
+  html+='<div class="row"><strong>'+name+'</strong>'+
+   '<span class="badge '+(shift?'done':'missing')+'">'+
+   (shift?'提出済み':'未提出')+'</span></div>';
  });
- document.getElementById('tbody').innerHTML=html||
- '<tr><td colspan="7">該当するキャストがいません</td></tr>';
+ document.getElementById('submissionList').innerHTML=
+ html||'<p>該当するキャストがいません</p>';
 }
+
+function saveShift(){
+ const i=Number(document.getElementById('cast').value);
+ const day=Number(document.getElementById('day').value);
+ const time=document.getElementById('time').value;
+ if(!samples[i])samples[i]=Array(6).fill('休み');
+ samples[i][day]=time;
+ document.getElementById('message').textContent=
+ names[i]+'のシフトを修正しました（デモ）';
+ render();
+}
+
+document.getElementById('cast').innerHTML=
+ names.map((n,i)=>'<option value="'+i+'">'+n+'</option>').join('');
 render();
 </script>
-  
-<script src="https://accounts.google.com/gsi/client" async defer></script>
-<script>
-const GOOGLE_CLIENT_ID =
-  "1085863794894-k3mno1tpr405umbs7ffb3v1slko9hacb.apps.googleusercontent.com";
-
-function handleGoogleLogin(response) {
-  // 現段階ではログイン動作の確認のみ。
-  // トークン検証と管理者判定は次の工程で実装。
-  document.getElementById("loginStatus").textContent =
-    "Googleログインを受け付けました（デモ表示）";
-  document.getElementById("loginArea").style.display = "none";
-  document.getElementById("adminMain").style.display = "block";
-}
-
-window.addEventListener("load", function () {
-  google.accounts.id.initialize({
-    client_id: GOOGLE_CLIENT_ID,
-    callback: handleGoogleLogin
-  });
-
-  google.accounts.id.renderButton(
-    document.getElementById("googleButton"),
-    { theme: "outline", size: "large", text: "signin_with" }
-  );
-});
-</script>
-
 </body>
 </html>
