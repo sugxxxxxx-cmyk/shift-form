@@ -1,0 +1,156 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>キャストシフト管理</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f4f6fa;color:#202b3a;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+header{background:#131c2d;color:white;padding:20px 16px;font-size:21px;font-weight:bold}
+header small{font-size:11px;color:#aeb8c9;margin-left:8px}
+main{max-width:1000px;margin:auto}
+.week{display:flex;align-items:center;justify-content:space-between;background:white;padding:14px;gap:8px}
+.week strong{font-size:18px}
+button{border:1px solid #dce2eb;background:white;border-radius:10px;padding:12px;font-size:15px;cursor:pointer}
+.arrow{font-size:20px;width:48px}
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px}
+.metric{background:white;border-radius:12px;text-align:center;padding:13px 5px}
+.metric span{display:block;font-size:12px;color:#667085}
+.metric b{display:block;font-size:25px;margin-top:4px}
+.controls{display:flex;gap:8px;padding:4px 12px 12px}
+input{flex:1;min-width:0;border:1px solid #dce2eb;border-radius:10px;padding:12px;font-size:16px}
+#filter{white-space:nowrap}
+.table-wrap{overflow-x:auto;background:white;border-top:1px solid #e5e9ef;border-bottom:1px solid #e5e9ef}
+table{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%}
+th,td{border-right:1px solid #e6e9ef;border-bottom:1px solid #e6e9ef;text-align:center;padding:0;min-width:86px;height:51px}
+thead th{height:58px;background:#f0f3f8;font-size:13px;position:sticky;top:0;z-index:2}
+th:first-child,td:first-child{position:sticky;left:0;min-width:110px;max-width:110px;background:white;z-index:3;text-align:left;padding:0 10px;font-weight:600;font-size:13px}
+thead th:first-child{background:#f0f3f8;z-index:4}
+thead .count{display:block;font-size:12px;color:#16804c;margin-top:5px}
+.cell{display:flex;align-items:center;justify-content:center;height:43px;margin:3px;border-radius:5px;font-size:13px;font-weight:bold}
+.work{background:#d8f8e5;color:#087a3f}
+.off{background:#f0f1f4;color:#9299a5}
+.missing{background:#ffe3e5;color:#d33b48}
+.legend{display:flex;flex-wrap:wrap;gap:14px;padding:16px;font-size:12px;color:#566171}
+.legend i{display:inline-block;width:13px;height:13px;border-radius:3px;vertical-align:middle;margin-right:4px}
+.note{font-size:12px;color:#737e8e;padding:0 15px 25px;line-height:1.7}
+</style>
+</head>
+<body>
+<header>キャストシフト <small>DEMO</small></header>
+<main>
+<div class="week">
+<button class="arrow" onclick="changeWeek(-1)">◀</button>
+<strong id="weekTitle"></strong>
+<button class="arrow" onclick="changeWeek(1)">▶</button>
+</div>
+<div class="summary">
+<div class="metric"><span>登録人数</span><b id="total">0</b></div>
+<div class="metric"><span>提出済み</span><b id="done" style="color:#07844a">0</b></div>
+<div class="metric"><span>未提出</span><b id="missing" style="color:#dc4450">0</b></div>
+</div>
+<div class="controls">
+<input id="search" placeholder="キャスト名で検索" oninput="render()">
+<button id="filter" onclick="toggleFilter()">未提出のみ</button>
+</div>
+<div class="table-wrap">
+<table>
+<thead id="thead"></thead>
+<tbody id="tbody"></tbody>
+</table>
+</div>
+<div class="legend">
+<span><i style="background:#d8f8e5"></i>出勤予定</span>
+<span><i style="background:#f0f1f4"></i>休み</span>
+<span><i style="background:#ffe3e5"></i>未提出</span>
+</div>
+<p class="note">
+※ これは架空データを使用したデモ画面です。<br>
+※ 実際のキャスト情報・Googleスプレッドシートとはまだ接続していません。
+</p>
+</main>
+<script>
+const names=[
+'さくら','花子','美咲','あかり','ゆい','りな',
+'みお','れいな','なな','ひなた','あおい','あすか'
+];
+const samples=[
+['21:00','21:00','休み','22:00','21:00','21:30'],
+['休み','21:30','21:00','21:00','22:00','21:00'],
+['22:00','休み','21:00','21:30','21:00','休み'],
+null,
+['21:30','22:00','休み','21:00','21:00','21:30'],
+null,
+['21:00','21:00','21:30','休み','22:00','21:00'],
+['休み','22:00','21:00','21:30','21:00','22:00'],
+null,
+['21:00','21:30','休み','21:00','21:00','21:00'],
+['21:00','休み','22:30','21:00','21:30','休み'],
+['22:00','21:00','21:30','休み','21:00','22:30']
+];
+let weekOffset=0;
+let onlyMissing=false;
+const weekdays=['月','火','水','木','金','土'];
+function mondayOfWeek(offset){
+ const now=new Date();
+ now.setHours(12,0,0,0);
+ const days=(now.getDay()+6)%7;
+ now.setDate(now.getDate()-days+offset*7);
+ return now;
+}
+function dateText(d){
+ return (d.getMonth()+1)+'/'+d.getDate();
+}
+function changeWeek(n){
+ weekOffset+=n;
+ render();
+}
+function toggleFilter(){
+ onlyMissing=!onlyMissing;
+ document.getElementById('filter').textContent=
+ onlyMissing?'全員表示':'未提出のみ';
+ render();
+}
+function render(){
+ const monday=mondayOfWeek(weekOffset);
+ const saturday=new Date(monday);
+ saturday.setDate(monday.getDate()+5);
+ document.getElementById('weekTitle').textContent=
+ dateText(monday)+' 〜 '+dateText(saturday);
+ const submitted=samples.filter(x=>x!==null).length;
+ document.getElementById('total').textContent=names.length;
+ document.getElementById('done').textContent=submitted;
+ document.getElementById('missing').textContent=names.length-submitted;
+ let head='<tr><th>キャスト<br>'+names.length+'人</th>';
+ for(let i=0;i<6;i++){
+  const date=new Date(monday);
+  date.setDate(monday.getDate()+i);
+  const count=samples.filter(s=>s&&s[i]!=='休み').length;
+  head+='<th>'+dateText(date)+'('+weekdays[i]+')'
+   +'<span class="count">出勤 '+count+'人</span></th>';
+ }
+ head+='</tr>';
+ document.getElementById('thead').innerHTML=head;
+ const query=document.getElementById('search').value.trim();
+ let html='';
+ names.forEach((name,index)=>{
+  const shift=samples[index];
+  if(onlyMissing&&shift!==null)return;
+  if(!name.includes(query))return;
+  html+='<tr><td>'+name+'</td>';
+  for(let i=0;i<6;i++){
+   const value=shift?shift[i]:'未';
+   const cls=!shift?'missing':value==='休み'?'off':'work';
+   html+='<td><div class="cell '+cls+'">'+value+'</div></td>';
+  }
+  html+='</tr>';
+ });
+ document.getElementById('tbody').innerHTML=html||
+ '<tr><td colspan="7">該当するキャストがいません</td></tr>';
+}
+render();
+</script>
+</body>
+</html>
