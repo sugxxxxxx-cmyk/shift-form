@@ -1,0 +1,163 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>シフト一覧 | Virgo</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f4f6fa;color:#202b3a;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+header{background:#131c2d;color:white;padding:17px 16px}
+header h1{font-size:20px;margin:0}
+header small{color:#b9c5d5;font-size:11px}
+nav{display:flex;background:white;border-bottom:1px solid #e2e7ef}
+nav a{flex:1;text-align:center;text-decoration:none;color:#667085;padding:15px 4px;font-size:13px;font-weight:bold}
+nav a.active{color:#087a4a;border-bottom:3px solid #087a4a}
+main{max-width:1100px;margin:auto}
+.week{display:flex;align-items:center;justify-content:space-between;background:white;padding:14px 10px;gap:8px}
+.week strong{font-size:17px;text-align:center}
+button{border:1px solid #dce2eb;background:white;border-radius:9px;padding:11px;cursor:pointer;font-size:14px}
+.arrow{font-size:19px;width:44px}
+.controls{display:flex;gap:8px;padding:12px}
+input{width:100%;border:1px solid #dce2eb;border-radius:10px;padding:13px;font-size:16px}
+.table-wrap{overflow-x:auto;background:white;border-top:1px solid #e5e9ef}
+table{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%}
+th,td{border-right:1px solid #e6e9ef;border-bottom:1px solid #e6e9ef;text-align:center;min-width:88px;height:52px;padding:0}
+thead th{background:#edf1f7;height:62px;font-size:13px;position:sticky;top:0;z-index:2}
+th:first-child,td:first-child{position:sticky;left:0;min-width:112px;max-width:112px;background:white;z-index:3;text-align:left;padding:0 10px;font-weight:600;font-size:13px}
+thead th:first-child{background:#edf1f7;z-index:4}
+.count{display:block;font-size:12px;color:#16804c;margin-top:5px}
+.cell{display:flex;align-items:center;justify-content:center;height:43px;margin:3px;border-radius:6px;font-size:13px;font-weight:bold}
+.work{background:#d8f8e5;color:#087a3f}
+.off{background:#f0f1f4;color:#9299a5}
+.missing{background:#ffe3e5;color:#d33b48}
+.legend{display:flex;flex-wrap:wrap;gap:15px;padding:17px;font-size:12px;color:#566171}
+.legend i{display:inline-block;width:13px;height:13px;border-radius:3px;vertical-align:middle;margin-right:4px}
+.note{font-size:12px;color:#737e8e;padding:0 16px 24px;line-height:1.7}
+.today{background:#e7f1ff!important}
+</style>
+</head>
+<body>
+<header>
+<h1>キャストシフト</h1>
+<small>Virgo Shift Manager ・ DEMO</small>
+</header>
+
+<nav>
+<a href="shift-view.html" class="active">シフト一覧</a>
+<a href="admin.html">シフト管理</a>
+<a href="staff.html">スタッフ管理</a>
+</nav>
+
+<main>
+<div class="week">
+<button class="arrow" onclick="changeWeek(-1)">◀</button>
+<div style="text-align:center">
+<strong id="weekTitle"></strong>
+<div><button onclick="goThisWeek()" style="padding:5px 12px;margin-top:5px;font-size:12px">今週に戻る</button></div>
+</div>
+<button class="arrow" onclick="changeWeek(1)">▶</button>
+</div>
+
+<div class="controls">
+<input id="search" placeholder="キャスト名で検索" oninput="render()">
+</div>
+
+<div class="table-wrap">
+<table>
+<thead id="thead"></thead>
+<tbody id="tbody"></tbody>
+</table>
+</div>
+
+<div class="legend">
+<span><i style="background:#d8f8e5"></i>出勤予定</span>
+<span><i style="background:#f0f1f4"></i>休み</span>
+<span><i style="background:#ffe3e5"></i>未提出</span>
+</div>
+<p class="note">
+※ 架空データを使用したデモ画面です。<br>
+※ 実際のキャスト情報とは接続していません。
+</p>
+</main>
+
+<script>
+const names=[
+'さくら','花子','美咲','あかり','ゆい','りな',
+'みお','れいな','なな','ひなた','あおい','あすか'
+];
+
+const samples=[
+['21:00','21:00','休み','22:00','21:00','21:30'],
+['休み','21:30','21:00','21:00','22:00','21:00'],
+['22:00','休み','21:00','21:30','21:00','休み'],
+null,
+['21:30','22:00','休み','21:00','21:00','21:30'],
+null,
+['21:00','21:00','21:30','休み','22:00','21:00'],
+['休み','22:00','21:00','21:30','21:00','22:00'],
+null,
+['21:00','21:30','休み','21:00','21:00','21:00'],
+['21:00','休み','22:30','21:00','21:30','休み'],
+['22:00','21:00','21:30','休み','21:00','22:30']
+];
+
+let weekOffset=0;
+const weekdays=['月','火','水','木','金','土'];
+
+function mondayOfWeek(offset){
+ const d=new Date();
+ d.setHours(12,0,0,0);
+ d.setDate(d.getDate()-(d.getDay()+6)%7+offset*7);
+ return d;
+}
+function dateText(d){
+ return (d.getMonth()+1)+'/'+d.getDate();
+}
+function changeWeek(n){
+ weekOffset+=n;
+ render();
+}
+function goThisWeek(){
+ weekOffset=0;
+ render();
+}
+function render(){
+ const monday=mondayOfWeek(weekOffset);
+ const saturday=new Date(monday);
+ saturday.setDate(monday.getDate()+5);
+ document.getElementById('weekTitle').textContent=
+ dateText(monday)+' 〜 '+dateText(saturday);
+
+ let head='<tr><th>キャスト</th>';
+ for(let i=0;i<6;i++){
+  const date=new Date(monday);
+  date.setDate(monday.getDate()+i);
+  const count=samples.filter(s=>s&&s[i]!=='休み').length;
+  head+='<th>'+dateText(date)+'('+weekdays[i]+')'
+    +'<span class="count">出勤 '+count+'人</span></th>';
+ }
+ head+='</tr>';
+ document.getElementById('thead').innerHTML=head;
+
+ const query=document.getElementById('search').value.trim();
+ let html='';
+ names.forEach((name,index)=>{
+  if(!name.includes(query))return;
+  const shift=samples[index];
+  html+='<tr><td>'+name+'</td>';
+  for(let i=0;i<6;i++){
+   const value=shift?shift[i]:'未';
+   const cls=!shift?'missing':value==='休み'?'off':'work';
+   html+='<td><div class="cell '+cls+'">'+value+'</div></td>';
+  }
+  html+='</tr>';
+ });
+ document.getElementById('tbody').innerHTML=html||
+ '<tr><td colspan="7">該当するキャストがいません</td></tr>';
+}
+render();
+</script>
+</body>
+</html>
