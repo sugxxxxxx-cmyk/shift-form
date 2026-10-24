@@ -1,0 +1,200 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>スタッフ管理 | Virgo</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f4f6fa;color:#202b3a;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+header{background:#131c2d;color:white;padding:17px 16px}
+header h1{font-size:20px;margin:0}
+header small{font-size:11px;color:#b9c5d5}
+nav{display:flex;background:white;border-bottom:1px solid #e2e7ef}
+nav a{flex:1;text-align:center;text-decoration:none;color:#667085;padding:15px 4px;font-size:13px;font-weight:bold}
+nav a.active{color:#087a4a;border-bottom:3px solid #087a4a}
+main{max-width:1050px;margin:auto;padding:12px}
+.section{background:white;border-radius:12px;padding:16px;margin-bottom:12px}
+.section h2{font-size:17px;margin:0 0 14px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 0;border-bottom:1px solid #edf0f4}
+.row:last-child{border-bottom:0}
+.name{font-size:14px;font-weight:600}
+.sub{font-size:12px;color:#7a8494;margin-top:4px}
+button{border:1px solid #dce2eb;background:white;border-radius:9px;padding:10px 12px;font-size:13px;cursor:pointer}
+.primary{background:#087a4a;color:white;border:0;font-weight:bold}
+.danger{color:#d33b48}
+.badge{display:inline-block;border-radius:20px;padding:5px 9px;font-size:11px;font-weight:bold}
+.green{background:#d8f8e5;color:#087a3f}
+.gray{background:#f0f1f4;color:#667085}
+.blue{background:#e7f1ff;color:#2455a4}
+.controls{display:flex;gap:8px;margin-bottom:10px}
+input,select{border:1px solid #dce2eb;border-radius:9px;padding:11px;font-size:15px;min-width:0}
+.controls input{flex:1}
+.form{display:grid;grid-template-columns:1fr 1fr auto;gap:8px}
+.note{font-size:12px;color:#737e8e;line-height:1.7;padding:0 5px}
+@media(max-width:600px){
+.form{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<header>
+<h1>スタッフ管理</h1>
+<small>Virgo Shift Manager ・ DEMO</small>
+</header>
+
+<nav>
+<a href="shift-view.html">シフト一覧</a>
+<a href="admin.html">シフト管理</a>
+<a href="staff.html" class="active">スタッフ管理</a>
+</nav>
+
+<main>
+
+<div class="section">
+<h2>キャスト管理</h2>
+<div class="controls">
+<input id="search" placeholder="キャスト名で検索" oninput="render()">
+</div>
+<div id="castList"></div>
+</div>
+
+<div class="section">
+<h2>キャストを追加</h2>
+<div class="form">
+<input id="newName" placeholder="キャスト名">
+<select id="newStatus">
+<option value="未連携">LINE未連携</option>
+<option value="連携済み">LINE連携済み（デモ）</option>
+</select>
+<button class="primary" onclick="addCast()">追加</button>
+</div>
+</div>
+
+<div class="section">
+<h2>管理者アカウント</h2>
+<p class="sub">今後、ログインID・パスワード・権限を設定する場所です。</p>
+<div class="row">
+<div>
+<div class="name">admin01</div>
+<div class="sub">最高管理者（サンプル）</div>
+</div>
+<span class="badge blue">最高管理者</span>
+</div>
+<div class="row">
+<div>
+<div class="name">manager01</div>
+<div class="sub">店長（サンプル）</div>
+</div>
+<span class="badge green">店長</span>
+</div>
+<div class="row">
+<div>
+<div class="name">staff01</div>
+<div class="sub">一般スタッフ（サンプル）</div>
+</div>
+<span class="badge gray">一般</span>
+</div>
+</div>
+
+<p class="note">
+※ 架空データを使用したデモです。<br>
+※ キャストの追加・削除はこのブラウザ内だけに保存されます。<br>
+※ 実際のLINE連携や管理者のログイン・権限設定にはまだ接続していません。
+</p>
+
+</main>
+
+<script>
+const initialCasts=[
+ {name:'さくら',status:'連携済み'},
+ {name:'花子',status:'未連携'},
+ {name:'美咲',status:'未連携'},
+ {name:'あかり',status:'未連携'},
+ {name:'ゆい',status:'未連携'},
+ {name:'りな',status:'未連携'},
+ {name:'みお',status:'未連携'},
+ {name:'れいな',status:'未連携'},
+ {name:'なな',status:'未連携'},
+ {name:'ひなた',status:'未連携'},
+ {name:'あおい',status:'未連携'},
+ {name:'あすか',status:'未連携'}
+];
+
+const storageKey='virgo_demo_casts';
+let casts;
+
+try{
+ const saved=JSON.parse(localStorage.getItem(storageKey));
+ casts=Array.isArray(saved)?saved:initialCasts.map(c=>({...c}));
+}catch(e){
+ casts=initialCasts.map(c=>({...c}));
+}
+
+function save(){
+ localStorage.setItem(storageKey,JSON.stringify(casts));
+}
+
+function render(){
+ const query=document.getElementById('search').value.trim();
+ const target=document.getElementById('castList');
+ target.innerHTML='';
+
+ casts.forEach((cast,index)=>{
+  if(!cast.name.includes(query))return;
+
+  const row=document.createElement('div');
+  row.className='row';
+
+  const info=document.createElement('div');
+  const name=document.createElement('div');
+  name.className='name';
+  name.textContent=cast.name;
+
+  const sub=document.createElement('div');
+  sub.className='sub';
+  sub.textContent=cast.status;
+  info.append(name,sub);
+
+  const del=document.createElement('button');
+  del.className='danger';
+  del.textContent='削除';
+  del.onclick=()=>removeCast(index);
+
+  row.append(info,del);
+  target.appendChild(row);
+ });
+}
+
+function addCast(){
+ const input=document.getElementById('newName');
+ const name=input.value.trim();
+ const status=document.getElementById('newStatus').value;
+
+ if(!name){
+  alert('キャスト名を入力してください');
+  return;
+ }
+ if(casts.some(c=>c.name===name)){
+  alert('同じ名前が登録されています');
+  return;
+ }
+
+ casts.push({name,status});
+ save();
+ input.value='';
+ render();
+}
+
+function removeCast(index){
+ if(!confirm(casts[index].name+'を削除しますか？'))return;
+ casts.splice(index,1);
+ save();
+ render();
+}
+
+render();
+</script>
+</body>
+</html>
