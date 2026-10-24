@@ -4,47 +4,126 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>週間シフト提出</title>
+  <title>LINE連携申請</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
+    * { box-sizing: border-box; }
     body {
-      font-family: sans-serif;
+      margin: 0;
+      padding: 24px 16px;
       background: #f5f6f8;
-      padding: 24px;
-      text-align: center;
+      font-family: -apple-system, sans-serif;
+      color: #222;
     }
-    h2 { margin-top: 40px; }
-    #status { margin-top: 24px; }
+    .card {
+      max-width: 480px;
+      margin: 30px auto;
+      padding: 28px 20px;
+      background: white;
+      border-radius: 16px;
+    }
+    h2 { text-align: center; margin-top: 0; }
+    .status {
+      padding: 12px;
+      background: #f2f4f7;
+      border-radius: 8px;
+      font-size: 14px;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    input {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+    button {
+      width: 100%;
+      margin-top: 20px;
+      padding: 15px;
+      font-size: 16px;
+      font-weight: bold;
+      border: 0;
+      border-radius: 8px;
+      background: #ccc;
+      color: #fff;
+    }
+    .note {
+      margin-top: 16px;
+      font-size: 13px;
+      color: #666;
+      line-height: 1.6;
+    }
   </style>
 </head>
 <body>
-  <h2>週間シフト提出</h2>
-  <p id="status">LINE認証を準備中...</p>
+  <div class="card">
+    <h2>LINE連携申請</h2>
+
+    <div id="status" class="status">
+      LINE認証を確認中...
+    </div>
+
+    <label for="castName">源氏名</label>
+    <input
+      id="castName"
+      type="text"
+      maxlength="50"
+      placeholder="例：さくら"
+      autocomplete="off"
+    >
+
+    <button type="button" disabled>
+      連携申請する（準備中）
+    </button>
+
+    <p class="note">
+      ※ 現在はテスト画面です。<br>
+      申請はまだ送信されません。<br>
+      管理者の承認後にLINE連携が完了する予定です。
+    </p>
+  </div>
 
   <script>
     const LIFF_ID = '2012188437-CoSEkbeN';
-    const status = document.getElementById('status');
+    const statusEl = document.getElementById('status');
 
     async function start() {
       try {
         if (typeof liff === 'undefined') {
-          throw new Error('LIFF SDKを読み込めませんでした');
+          throw new Error('LINE SDKを読み込めませんでした');
         }
 
-        status.textContent = 'LINE認証中...';
-
-        await liff.init({ liffId: LIFF_ID });
+        await Promise.race([
+          liff.init({ liffId: LIFF_ID }),
+          new Promise((_, reject) =>
+            setTimeout(
+              () => reject(new Error('認証がタイムアウトしました')),
+              10000
+            )
+          )
+        ]);
 
         if (!liff.isLoggedIn()) {
-          status.textContent = 'LINEログインが必要です';
+          statusEl.textContent =
+            'LINEログインが必要です。LINEから開いてください。';
           return;
         }
 
-        status.textContent = 'LINE認証成功！';
-        status.style.color = 'green';
+        const profile = await liff.getProfile();
+
+        statusEl.textContent =
+          'LINE認証済み：' + profile.displayName;
+
       } catch (error) {
-        status.textContent = 'エラー：' + error.message;
-        status.style.color = 'red';
+        statusEl.textContent =
+          'LINE認証エラー：' + error.message;
       }
     }
 
