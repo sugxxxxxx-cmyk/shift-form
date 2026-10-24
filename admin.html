@@ -162,5 +162,33 @@ function render(){
 }
 render();
 </script>
+  
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+const GOOGLE_CLIENT_ID =
+  "1085863794894-k3mno1tpr405umbs7ffb3v1slko9hacb.apps.googleusercontent.com";
+
+function handleGoogleLogin(response) {
+  // 現段階ではログイン動作の確認のみ。
+  // トークン検証と管理者判定は次の工程で実装。
+  document.getElementById("loginStatus").textContent =
+    "Googleログインを受け付けました（デモ表示）";
+  document.getElementById("loginArea").style.display = "none";
+  document.getElementById("adminMain").style.display = "block";
+}
+
+window.addEventListener("load", function () {
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: handleGoogleLogin
+  });
+
+  google.accounts.id.renderButton(
+    document.getElementById("googleButton"),
+    { theme: "outline", size: "large", text: "signin_with" }
+  );
+});
+</script>
+
 </body>
 </html>
