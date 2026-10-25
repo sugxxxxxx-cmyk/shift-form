@@ -6,344 +6,49 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>シフト管理 | Virgo</title>
 <style>
-*{box-sizing:border-box}
-body{margin:0;background:#f4f6fa;color:#202b3a;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
-header{background:#131c2d;color:#fff;padding:17px 16px}
-header h1{font-size:20px;margin:0}
-header small{font-size:11px;color:#b9c5d5}
-nav{display:flex;background:#fff;border-bottom:1px solid #e2e7ef}
-nav a{flex:1;text-align:center;text-decoration:none;color:#667085;padding:15px 4px;font-size:13px;font-weight:bold}
-nav a.active{color:#087a4a;border-bottom:3px solid #087a4a}
-main{max-width:1050px;margin:auto}
-.week{display:flex;justify-content:space-between;align-items:center;background:#fff;padding:14px;gap:10px}
-.week strong{font-size:17px}
-button{background:#fff;border:1px solid #dce2eb;border-radius:9px;padding:11px;font-size:14px;cursor:pointer}
-.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px}
-.metric{background:#fff;border-radius:12px;text-align:center;padding:15px 5px}
-.metric span{display:block;font-size:12px;color:#667085}
-.metric b{display:block;font-size:27px;margin-top:5px}
-.section{background:#fff;margin:12px;border-radius:12px;padding:16px}
-.section h2{font-size:17px;margin:0 0 12px}
-.row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #edf0f4;gap:10px}
-.row:last-child{border:0}
-.badge{border-radius:20px;padding:6px 10px;font-size:12px;font-weight:bold}
-.done{background:#d8f8e5;color:#087a3f}
-.missing{background:#ffe3e5;color:#d33b48}
-.manual{background:#e7f1ff;color:#2455a4}
-input,select{border:1px solid #dce2eb;border-radius:8px;padding:10px;font-size:15px;max-width:100%}
-.controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-.controls input{flex:1;min-width:140px}
-.edit-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:12px 0}
-.edit-row label{font-size:12px;color:#667085}
-.edit-row select,.edit-row input{width:100%;margin-top:5px}
-.primary{background:#087a4a;color:#fff;border:0;font-weight:bold}
-.note{font-size:12px;color:#737e8e;line-height:1.7;padding:0 16px 20px}
-@media(max-width:600px){
-.edit-row{grid-template-columns:1fr}
-.week strong{font-size:14px}
-}
+*{box-sizing:border-box}body{margin:0;background:#f4f6fa;color:#202b3a;font-family:-apple-system,BlinkMacSystemFont,sans-serif}header{background:#131c2d;color:#fff;padding:17px 16px}header h1{font-size:20px;margin:0}header small{font-size:11px;color:#b9c5d5}nav{display:flex;background:#fff;border-bottom:1px solid #e2e7ef}nav a{flex:1;text-align:center;text-decoration:none;color:#667085;padding:15px 4px;font-size:13px;font-weight:bold}nav a.active{color:#087a4a;border-bottom:3px solid #087a4a}main{max-width:1050px;margin:auto}.week{display:flex;justify-content:space-between;align-items:center;background:#fff;padding:14px;gap:10px}.week strong{font-size:17px}button{background:#fff;border:1px solid #dce2eb;border-radius:9px;padding:11px;font-size:14px;cursor:pointer}button:disabled{opacity:.5;cursor:wait}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px}.metric{background:#fff;border-radius:12px;text-align:center;padding:15px 5px}.metric span{display:block;font-size:12px;color:#667085}.metric b{display:block;font-size:27px;margin-top:5px}.section{background:#fff;margin:12px;border-radius:12px;padding:16px}.section h2{font-size:17px;margin:0 0 12px}.row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #edf0f4;gap:10px}.row:last-child{border:0}.badge{border-radius:20px;padding:6px 10px;font-size:12px;font-weight:bold;white-space:nowrap}.done{background:#d8f8e5;color:#087a3f}.missing{background:#ffe3e5;color:#d33b48}.manual{background:#e7f1ff;color:#2455a4}input,select{border:1px solid #dce2eb;border-radius:8px;padding:10px;font-size:15px;max-width:100%}.controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.controls input{flex:1;min-width:140px}.edit-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:12px 0}.edit-row label{font-size:12px;color:#667085}.edit-row select{width:100%;margin-top:5px}.primary{background:#087a4a;color:#fff;border:0;font-weight:bold}.note{font-size:12px;color:#737e8e;line-height:1.7;padding:0 16px 20px}.sync{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 12px 0;color:#667085;font-size:12px}.sync button{padding:8px 12px;font-size:12px}.status{font-size:13px;margin-top:12px;min-height:20px}.error{color:#c43142}.ok{color:#087a4a}@media(max-width:600px){.edit-row{grid-template-columns:1fr}.week strong{font-size:14px}}
 </style>
 </head>
 <body>
-
-<header>
-<h1>キャストシフト管理</h1>
-<small>Virgo Shift Manager ・ DEMO</small>
-</header>
-
-<nav>
-<a href="shift-view.html">シフト一覧</a>
-<a href="admin.html" class="active">シフト管理</a>
-<a href="staff.html">スタッフ管理</a>
-</nav>
-
+<header><h1>キャストシフト管理</h1><small>Virgo Shift Manager ・ TEST</small></header>
+<nav><a href="shift-view.html">シフト一覧</a><a href="admin.html" class="active">シフト管理</a><a href="staff.html">スタッフ管理</a></nav>
 <main>
-<div class="week">
-<button onclick="changeWeek(-1)">◀</button>
-<div style="text-align:center">
-<strong id="weekTitle"></strong>
-<div>
-<button onclick="goThisWeek()" style="padding:5px 10px;margin-top:5px;font-size:12px">今週</button>
-</div>
-</div>
-<button onclick="changeWeek(1)">▶</button>
-</div>
-
-<div class="summary">
-<div class="metric">
-<span>登録人数</span><b id="total">0</b>
-</div>
-<div class="metric">
-<span>入力済み</span><b id="done" style="color:#087a4a">0</b>
-</div>
-<div class="metric">
-<span>未提出・未入力</span><b id="missing" style="color:#dc4450">0</b>
-</div>
-</div>
-
-<div class="section">
-<h2>提出・入力状況</h2>
-<div class="controls">
-<input id="search" placeholder="キャスト名で検索" oninput="render()">
-<button id="filter" onclick="toggleFilter()">未提出のみ</button>
-</div>
-<div id="submissionList"></div>
-</div>
-
-<div class="section">
-<h2>シフト修正（デモ）</h2>
-<p style="font-size:13px;color:#667085">
-キャスト・曜日・時間を選んで修正できます。
-</p>
-
-<div class="edit-row">
-<div>
-<label>キャスト</label>
-<select id="cast"></select>
-</div>
-<div>
-<label>曜日</label>
-<select id="day">
-<option value="0">月曜日</option>
-<option value="1">火曜日</option>
-<option value="2">水曜日</option>
-<option value="3">木曜日</option>
-<option value="4">金曜日</option>
-<option value="5">土曜日</option>
-</select>
-</div>
-<div>
-<label>出勤時間</label>
-<select id="time">
-<option value="21:00">21:00</option>
-<option value="21:30">21:30</option>
-<option value="22:00">22:00</option>
-<option value="22:30">22:30</option>
-<option value="23:00">23:00</option>
-<option value="休み">休み</option>
-</select>
-</div>
-</div>
-
-<button class="primary" onclick="saveShift()">この内容で修正</button>
-<p id="message" style="font-size:13px;color:#087a4a"></p>
-</div>
-
-<p class="note">
-※ デモデータを使用しています。<br>
-※ 同じブラウザ内のシフト一覧と連動します。<br>
-※ LINEからの本人提出やGoogleスプレッドシートとはまだ接続していません。<br>
-※ 本番運用前にログイン・アクセス制限を実装します。
-</p>
+<div class="week"><button onclick="changeWeek(-1)">◀</button><div style="text-align:center"><strong id="weekTitle"></strong><div><button onclick="goThisWeek()" style="padding:5px 10px;margin-top:5px;font-size:12px">今週</button></div></div><button onclick="changeWeek(1)">▶</button></div>
+<div class="sync"><span id="syncStatus">スプレッドシートに接続中...</span><button onclick="loadRemote()">更新する ↻</button></div>
+<div class="summary"><div class="metric"><span>登録人数</span><b id="total">0</b></div><div class="metric"><span>入力済み（6日分）</span><b id="done" style="color:#087a4a">0</b></div><div class="metric"><span>未提出・未入力</span><b id="missing" style="color:#dc4450">0</b></div></div>
+<div class="section"><h2>提出・入力状況</h2><div class="controls"><input id="search" placeholder="キャスト名で検索" oninput="render()"><button id="filter" onclick="toggleFilter()">未提出のみ</button></div><div id="submissionList">読み込み中...</div></div>
+<div class="section"><h2>シフト修正</h2><p style="font-size:13px;color:#667085">キャスト・曜日・時間を選んでスプレッドシートに保存できます。</p>
+<div class="edit-row"><div><label for="cast">キャスト</label><select id="cast" onchange="updateCurrent()"></select></div><div><label for="day">曜日</label><select id="day" onchange="updateCurrent()"><option value="0">月曜日</option><option value="1">火曜日</option><option value="2">水曜日</option><option value="3">木曜日</option><option value="4">金曜日</option><option value="5">土曜日</option></select></div><div><label for="time">出勤時間</label><select id="time"><option value="21:00">21:00</option><option value="21:30">21:30</option><option value="22:00">22:00</option><option value="22:30">22:30</option><option value="23:00">23:00</option><option value="休み">休み</option><option value="未提出">未提出に戻す</option></select></div></div>
+<p id="current" style="font-size:12px;color:#667085"></p><button id="saveButton" class="primary" onclick="saveShift()" disabled>この内容で修正</button><p id="message" class="status" role="status"></p></div>
+<p class="note">※ キャスト名簿と日別シフトから読み込みます。<br>※ 変更はスプレッドシートに保存し、再取得して確認します。<br>※ 約30秒ごとに更新します。<br>※ 「入力済み」は月〜土の6日すべてが入力された人数です。<br>※ 公開テスト専用です。実在するキャスト情報を登録しないでください。<br>※ 本番運用前にログイン・アクセス制限を実装してください。</p>
 </main>
-
 <script>
-const initialNames=[
-'さくら','花子','美咲','あかり','ゆい','りな',
-'みお','れいな','なな','ひなた','あおい','あすか'
-];
-
-const baseSamples=[
-['21:00','21:00','休み','22:00','21:00','21:30'],
-['休み','21:30','21:00','21:00','22:00','21:00'],
-['22:00','休み','21:00','21:30','21:00','休み'],
-null,
-['21:30','22:00','休み','21:00','21:00','21:30'],
-null,
-['21:00','21:00','21:30','休み','22:00','21:00'],
-['休み','22:00','21:00','21:30','21:00','22:00'],
-null,
-['21:00','21:30','休み','21:00','21:00','21:00'],
-['21:00','休み','22:30','21:00','21:30','休み'],
-['22:00','21:00','21:30','休み','21:00','22:30']
-];
-
+const API_URL='https://script.google.com/macros/s/AKfycbzp3OJOz1hJfg-9fVt2FHGsDj1aCqGgww4mzQzgBRbulxp_kE2FQH8B-EkDK9AeyZ42/exec';
 const weekdays=['月','火','水','木','金','土'];
-let weekOffset=0;
-let onlyMissing=false;
-
-function mondayOfWeek(offset){
- const d=new Date();
- d.setHours(12,0,0,0);
- d.setDate(d.getDate()-(d.getDay()+6)%7+offset*7);
- return d;
-}
-
-function dateKey(d){
- return d.getFullYear()+'-'+
- String(d.getMonth()+1).padStart(2,'0')+'-'+
- String(d.getDate()).padStart(2,'0');
-}
-
-function weekKey(){
- return 'virgo_demo_shifts_'+
- dateKey(mondayOfWeek(weekOffset));
-}
-
-function dateText(d){
- return (d.getMonth()+1)+'/'+d.getDate();
-}
-
-function getCasts(){
- try{
-  const saved=JSON.parse(localStorage.getItem('virgo_demo_casts'));
-  if(Array.isArray(saved))return saved;
- }catch(e){}
- return initialNames.map((name,i)=>({
-  id:'initial_'+i,name,
-  status:i===0?'連携済み':'未連携'
- }));
-}
-
-function castId(cast){
- return cast.id||'name_'+cast.name;
-}
-
-function getData(){
- try{
-  const saved=JSON.parse(localStorage.getItem(weekKey()));
-  if(saved&&typeof saved==='object')return saved;
- }catch(e){}
- return {};
-}
-
-function saveData(data){
- localStorage.setItem(weekKey(),JSON.stringify(data));
-}
-
-function getShift(cast,data){
- const id=castId(cast);
- if(Object.prototype.hasOwnProperty.call(data,id)){
-  return data[id].days;
- }
- const i=initialNames.indexOf(cast.name);
- return i>=0?baseSamples[i]:null;
-}
-
-function getStatus(cast,data){
- const id=castId(cast);
- if(Object.prototype.hasOwnProperty.call(data,id)){
-  return data[id].source||'manual';
- }
- return getShift(cast,data)?'sample':'missing';
-}
-
-function changeWeek(n){
- weekOffset+=n;
- render();
-}
-
-function goThisWeek(){
- weekOffset=0;
- render();
-}
-
-function toggleFilter(){
- onlyMissing=!onlyMissing;
- document.getElementById('filter').textContent=
- onlyMissing?'全員表示':'未提出のみ';
- render();
-}
-
-function escapeHtml(str){
- return String(str).replace(/[&<>"']/g,c=>({
-  '&':'&amp;','<':'&lt;','>':'&gt;',
-  '"':'&quot;',"'":'&#39;'
- }[c]));
-}
-
-function render(){
- const mon=mondayOfWeek(weekOffset);
- const sat=new Date(mon);
- sat.setDate(mon.getDate()+5);
-
- document.getElementById('weekTitle').textContent=
- dateText(mon)+' 〜 '+dateText(sat);
-
- const casts=getCasts();
- const data=getData();
-
- document.getElementById('total').textContent=casts.length;
-
- const entered=casts.filter(c=>getShift(c,data)!==null).length;
- document.getElementById('done').textContent=entered;
- document.getElementById('missing').textContent=casts.length-entered;
-
- const castSelect=document.getElementById('cast');
- const oldValue=castSelect.value;
- castSelect.innerHTML='';
-
- casts.forEach(c=>{
-  const opt=document.createElement('option');
-  opt.value=castId(c);
-  opt.textContent=c.name;
-  castSelect.appendChild(opt);
- });
-
- if([...castSelect.options].some(o=>o.value===oldValue)){
-  castSelect.value=oldValue;
- }
-
- const query=document.getElementById('search').value.trim();
- let html='';
-
- casts.forEach(c=>{
-  const shift=getShift(c,data);
-  const status=getStatus(c,data);
-
-  if(onlyMissing&&shift!==null)return;
-  if(!c.name.includes(query))return;
-
-  const label=status==='manual'?'管理者入力済み':
-    status==='sample'?'入力済み（デモ）':'未提出';
-
-  const badge=status==='manual'?'manual':
-    status==='sample'?'done':'missing';
-
-  html+='<div class="row"><strong>'+
-   escapeHtml(c.name)+'</strong>'+
-   '<span class="badge '+badge+'">'+label+'</span></div>';
- });
-
- document.getElementById('submissionList').innerHTML=
- html||'<p>該当するキャストがいません</p>';
-}
-
-function saveShift(){
- const id=document.getElementById('cast').value;
- const day=Number(document.getElementById('day').value);
- const time=document.getElementById('time').value;
-
- const casts=getCasts();
- const cast=casts.find(c=>castId(c)===id);
- if(!cast){
-  alert('キャストを選択してください');
-  return;
- }
-
- const data=getData();
- const current=getShift(cast,data);
-
- const days=current?[...current]:Array(6).fill('休み');
- days[day]=time;
-
- data[id]={
-  days,
-  source:'manual',
-  updatedAt:new Date().toISOString()
- };
-
- saveData(data);
-
- document.getElementById('message').textContent=
- cast.name+'のシフトを修正しました（デモ）';
-
- render();
-}
-
-window.addEventListener('storage',render);
-window.addEventListener('pageshow',render);
-render();
+let weekOffset=0,onlyMissing=false,casts=[],loadedWeek='',requestNumber=0,saving=false;
+function mondayOfWeek(offset){const d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()-(d.getDay()+6)%7+offset*7);return d;}
+function dateKey(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function dateText(d){return (d.getMonth()+1)+'/'+d.getDate();}
+function weekKey(){return dateKey(mondayOfWeek(weekOffset));}
+function isComplete(c){return Array.isArray(c.days)&&c.days.length===6&&c.days.every(t=>t&&t!=='未提出'&&t!=='未');}
+function changeWeek(n){if(saving)return;weekOffset+=n;casts=[];loadedWeek='';render();loadRemote();}
+function goThisWeek(){if(saving)return;weekOffset=0;casts=[];loadedWeek='';render();loadRemote();}
+function toggleFilter(){onlyMissing=!onlyMissing;document.getElementById('filter').textContent=onlyMissing?'全員表示':'未提出のみ';render();}
+function setStatus(s){document.getElementById('syncStatus').textContent=s;}
+function setMessage(s,error=false){const el=document.getElementById('message');el.textContent=s;el.className='status '+(error?'error':'ok');}
+function render(){const mon=mondayOfWeek(weekOffset),sat=new Date(mon);sat.setDate(sat.getDate()+5);document.getElementById('weekTitle').textContent=dateText(mon)+' 〜 '+dateText(sat);
+const done=casts.filter(isComplete).length;document.getElementById('total').textContent=casts.length;document.getElementById('done').textContent=done;document.getElementById('missing').textContent=casts.length-done;
+const select=document.getElementById('cast'),old=select.value;select.replaceChildren();casts.forEach(c=>{const opt=document.createElement('option');opt.value=c.id;opt.textContent=c.name;select.appendChild(opt);});if(casts.some(c=>c.id===old))select.value=old;
+const query=document.getElementById('search').value.trim(),list=document.getElementById('submissionList');list.replaceChildren();let visible=0;
+casts.forEach(c=>{if(onlyMissing&&isComplete(c))return;if(!c.name.includes(query))return;visible++;const row=document.createElement('div');row.className='row';const name=document.createElement('strong');name.textContent=c.name;const badge=document.createElement('span');badge.className='badge '+(isComplete(c)?'done':'missing');const filled=(c.days||[]).filter(t=>t&&t!=='未提出'&&t!=='未').length;badge.textContent=isComplete(c)?'入力済み（6/6）':(filled?'一部入力（'+filled+'/6）':'未提出');row.append(name,badge);list.appendChild(row);});
+if(!visible){const p=document.createElement('p');p.textContent=loadedWeek?'該当するキャストがいません':'シフトを読み込み中です';list.appendChild(p);}updateCurrent();}
+function updateCurrent(){const c=casts.find(x=>x.id===document.getElementById('cast').value),day=Number(document.getElementById('day').value),current=document.getElementById('current');current.textContent=c?'現在：'+c.name+'／'+weekdays[day]+'曜日／'+(c.days[day]||'未提出'):'キャストを読み込んでください';document.getElementById('saveButton').disabled=!c||saving;}
+function fetchWeekData(week){return new Promise((resolve,reject)=>{const callback='virgoDemoCallback_admin_'+Date.now()+'_'+Math.floor(Math.random()*1000000);const script=document.createElement('script');let finished=false;const timer=setTimeout(()=>finish(new Error('読み込みがタイムアウトしました')),15000);function finish(error,result){if(finished)return;finished=true;clearTimeout(timer);script.remove();try{delete window[callback];}catch(e){window[callback]=undefined;}if(error)reject(error);else resolve(result);}window[callback]=result=>{if(!result||result.success!==true||result.week!==week||!Array.isArray(result.casts)){finish(new Error('シフトの取得に失敗しました'));return;}finish(null,result);};script.onerror=()=>finish(new Error('通信エラー'));script.src=API_URL+'?action=demoShiftView&week='+encodeURIComponent(week)+'&callback='+encodeURIComponent(callback)+'&_='+Date.now();document.head.appendChild(script);});}
+async function loadRemote(){if(saving)return;const week=weekKey(),id=++requestNumber;setStatus('スプレッドシートから読み込み中...');try{const result=await fetchWeekData(week);if(id!==requestNumber||week!==weekKey())return;casts=result.casts.filter(c=>c&&typeof c.id==='string'&&typeof c.name==='string'&&Array.isArray(c.days)).map(c=>({id:c.id,name:c.name,days:c.days.slice(0,6),submitted:c.submitted===true}));loadedWeek=week;setStatus('スプレッドシートと接続済み ・ '+new Date().toLocaleTimeString('ja-JP')+' 更新');render();}catch(e){if(id===requestNumber)setStatus('読み込みエラー：'+e.message);}}
+async function saveShift(){if(saving)return;const id=document.getElementById('cast').value,day=Number(document.getElementById('day').value),time=document.getElementById('time').value,c=casts.find(x=>x.id===id);if(!c){alert('キャストを選択してください');return;}const monday=mondayOfWeek(weekOffset),date=new Date(monday);date.setDate(date.getDate()+day);const dateStr=dateKey(date),week=dateKey(monday);if(!confirm(c.name+'／'+dateStr+'（'+weekdays[day]+'）を「'+time+'」に変更しますか？'))return;
+saving=true;requestNumber++;updateCurrent();setMessage('保存中です。確認が終わるまでお待ちください。');setStatus('スプレッドシートに送信中...');try{await fetch(API_URL,{method:'POST',mode:'no-cors',cache:'no-store',headers:{'Content-Type':'text/plain;charset=UTF-8'},body:JSON.stringify({action:'demoEditShift',castId:id,date:dateStr,time})});let verified=false,lastError=null;for(let attempt=0;attempt<6;attempt++){await new Promise(r=>setTimeout(r,1300+attempt*500));try{const result=await fetchWeekData(week),updated=result.casts.find(x=>x.id===id);if(updated&&updated.days[day]===time){casts=result.casts.filter(x=>x&&typeof x.id==='string'&&typeof x.name==='string'&&Array.isArray(x.days)).map(x=>({id:x.id,name:x.name,days:x.days.slice(0,6),submitted:x.submitted===true}));loadedWeek=week;verified=true;break;}}catch(e){lastError=e;}}
+if(verified){setStatus('保存完了 ・ '+new Date().toLocaleTimeString('ja-JP')+' 更新');setMessage(c.name+'／'+dateStr+' → '+time+' を保存しました');}else{setStatus('保存結果を確認できませんでした');setMessage('送信後の確認ができませんでした。スプレッドシートを確認し、「更新する」を押してください。'+(lastError?'（'+lastError.message+'）':''),true);}}catch(e){setStatus('送信エラー');setMessage('送信に失敗しました：'+e.message,true);}finally{saving=false;render();}}
+window.addEventListener('pageshow',()=>{if(!saving)loadRemote();});setInterval(()=>{if(document.visibilityState==='visible'&&!saving)loadRemote();},30000);render();loadRemote();
 </script>
 </body>
 </html>
