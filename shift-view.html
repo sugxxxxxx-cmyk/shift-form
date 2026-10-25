@@ -18,6 +18,7 @@ main{max-width:1100px;margin:auto}
 .week{display:flex;align-items:center;justify-content:space-between;background:white;padding:14px 10px;gap:8px}
 .week strong{font-size:17px}
 button{border:1px solid #dce2eb;background:white;border-radius:9px;padding:11px;cursor:pointer;font-size:14px}
+button:disabled{opacity:.55;cursor:not-allowed}
 .arrow{font-size:19px;width:44px}
 .controls{display:flex;gap:8px;padding:12px}
 input{width:100%;border:1px solid #dce2eb;border-radius:10px;padding:13px;font-size:16px}
@@ -53,6 +54,18 @@ thead th:first-child{background:#edf1f7;z-index:4}
 .options .rest{background:#f0f1f4}
 .options .none{background:#ffe3e5;color:#b42332}
 .close{width:100%;margin-top:14px;background:#f4f6fa}
+.primary{background:#087a4a;color:white;border:0;font-weight:bold}
+.login-box{max-width:420px;margin:28px auto;background:white;padding:24px;border-radius:14px}
+.login-box h2{margin:0 0 8px;font-size:20px}
+.login-box p{color:#667085;font-size:13px;line-height:1.7}
+.login-box label{display:block;margin-top:15px;font-size:13px;font-weight:bold}
+.login-box input{margin-top:7px}
+.login-box button{width:100%;margin-top:18px;padding:14px}
+.login-error{color:#d33b48;font-size:13px;margin-top:12px}
+.userbar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px;background:#e9f6ef;font-size:12px;color:#087a4a}
+.userbar span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.userbar button{padding:7px 11px;font-size:12px}
+.hidden{display:none!important}
 @media(max-width:600px){.week strong{font-size:15px}}
 </style>
 </head>
@@ -60,7 +73,7 @@ thead th:first-child{background:#edf1f7;z-index:4}
 
 <header>
  <h1>キャストシフト</h1>
- <small>Virgo Shift Manager ・ TEST</small>
+ <small>Virgo Shift Manager ・ SUPABASE TEST</small>
 </header>
 
 <nav>
@@ -69,110 +82,464 @@ thead th:first-child{background:#edf1f7;z-index:4}
  <a href="staff.html">スタッフ管理</a>
 </nav>
 
-<main>
- <div class="week">
-  <button class="arrow" onclick="changeWeek(-1)">◀</button>
-  <div style="text-align:center">
-   <strong id="weekTitle"></strong>
-   <div>
-    <button onclick="goThisWeek()" style="padding:5px 12px;margin-top:5px;font-size:12px">
-     今週に戻る
-    </button>
+<section id="loginScreen" class="login-box">
+ <h2>管理者ログイン</h2>
+ <p>
+  Supabaseに登録した管理者アカウントで
+  ログインしてください。
+ </p>
+
+ <form id="loginForm">
+  <label for="email">メールアドレス</label>
+  <input
+   id="email"
+   type="email"
+   autocomplete="username"
+   required
+   placeholder="メールアドレス"
+  >
+
+  <label for="password">パスワード</label>
+  <input
+   id="password"
+   type="password"
+   autocomplete="current-password"
+   required
+   placeholder="パスワード"
+  >
+
+  <button
+   id="loginButton"
+   class="primary"
+   type="submit"
+  >ログイン</button>
+ </form>
+
+ <div id="loginError" class="login-error"></div>
+</section>
+
+<div id="appScreen" class="hidden">
+
+ <div class="userbar">
+  <span id="loginUser">管理者ログイン中</span>
+  <button onclick="logout()">ログアウト</button>
+ </div>
+
+ <main>
+  <div class="week">
+   <button class="arrow" onclick="changeWeek(-1)">◀</button>
+
+   <div style="text-align:center">
+    <strong id="weekTitle"></strong>
+    <div>
+     <button
+      onclick="goThisWeek()"
+      style="padding:5px 12px;margin-top:5px;font-size:12px"
+     >今週に戻る</button>
+    </div>
+   </div>
+
+   <button class="arrow" onclick="changeWeek(1)">▶</button>
+  </div>
+
+  <div class="controls">
+   <input
+    id="search"
+    placeholder="キャスト名で検索"
+    oninput="render()"
+   >
+  </div>
+
+  <div class="sync">
+   <span id="syncStatus">Supabaseに接続中...</span>
+   <button onclick="loadRemote()">更新する ↻</button>
+  </div>
+
+  <div class="stats">
+   <div class="stat">
+    <strong id="totalCount">0</strong>
+    <small>キャスト総数</small>
+   </div>
+   <div class="stat">
+    <strong id="submittedCount">0</strong>
+    <small>入力済み</small>
+   </div>
+   <div class="stat">
+    <strong id="missingCount">0</strong>
+    <small>未入力あり</small>
    </div>
   </div>
-  <button class="arrow" onclick="changeWeek(1)">▶</button>
- </div>
 
- <div class="controls">
-  <input id="search" placeholder="キャスト名で検索" oninput="render()">
- </div>
-
- <div class="sync">
-  <span id="syncStatus">スプレッドシートに接続中...</span>
-  <button onclick="loadRemote()">更新する ↻</button>
- </div>
-
- <div class="stats">
-  <div class="stat">
-   <strong id="totalCount">0</strong>
-   <small>キャスト総数</small>
+  <div class="table-wrap">
+   <table>
+    <thead id="thead"></thead>
+    <tbody id="tbody"></tbody>
+   </table>
   </div>
-  <div class="stat">
-   <strong id="submittedCount">0</strong>
-   <small>提出済み</small>
+
+  <div class="legend">
+   <span><i style="background:#d8f8e5"></i>出勤予定</span>
+   <span><i style="background:#f0f1f4"></i>休み</span>
+   <span><i style="background:#ffe3e5"></i>未提出・未入力</span>
   </div>
-  <div class="stat">
-   <strong id="missingCount">0</strong>
-   <small>未提出</small>
-  </div>
- </div>
 
- <div class="table-wrap">
-  <table>
-   <thead id="thead"></thead>
-   <tbody id="tbody"></tbody>
-  </table>
- </div>
+  <p class="note">
+   ※ Supabaseに保存されたテストデータを表示します。<br>
+   ※ 約8秒ごとに他端末の更新を確認します。<br>
+   ※ マスをタップするとシフトを変更できます。<br>
+   ※ 変更はSupabaseに直接保存します。<br>
+   ※ 現在のLINE提出・スプレッドシートとは別管理です。<br>
+   ※ 本番運用前にスタッフ別権限とLINE連携を整備します。
+  </p>
+ </main>
+</div>
 
- <div class="legend">
-  <span><i style="background:#d8f8e5"></i>出勤予定</span>
-  <span><i style="background:#f0f1f4"></i>休み</span>
-  <span><i style="background:#ffe3e5"></i>未提出</span>
- </div>
-
- <p class="note">
-  ※ LINE提出内容はスプレッドシートから読み込みます。<br>
-  ※ 約30秒ごとに更新を確認します。<br>
-  ※ マスをタップするとシフトを変更し、スプレッドシートに保存します。<br>
-  ※ 保存後にシートを再取得し、別端末でも同じ内容を表示します。<br>
-  ※ テスト専用です。実在するキャスト情報は登録しないでください。
- </p>
-</main>
-
-<div class="overlay" id="overlay" onclick="closeOutside(event)">
- <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+<div
+ class="overlay"
+ id="overlay"
+ onclick="closeOutside(event)"
+>
+ <div
+  class="modal"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="modalTitle"
+ >
   <h2 id="modalTitle">シフト変更</h2>
   <p id="modalInfo"></p>
   <div class="options" id="options"></div>
-  <button class="close" onclick="closeModal()">キャンセル</button>
+  <button
+   class="close"
+   onclick="closeModal()"
+  >キャンセル</button>
  </div>
 </div>
 
 <script>
-const API_URL =
- 'https://script.google.com/macros/s/AKfycbzp3OJOz1hJfg-9fVt2FHGsDj1aCqGgww4mzQzgBRbulxp_kE2FQH8B-EkDK9AeyZ42/exec';
+'use strict';
+
+/*
+ * Supabase接続設定
+ * Publishable keyのみ使用。
+ * Secret key / service_roleは絶対に設定しない。
+ */
+const SUPABASE_URL =
+ 'https://krfzidbqoyhmkeylvneh.supabase.co';
+
+const SUPABASE_KEY =
+ 'sb_publishable_4W4TXn_pvYcoLxJIwzbb2A_vRMvUbp5';
 
 const weekdays=['月','火','水','木','金','土'];
-const times=['21:00','21:30','22:00','22:30','23:00','休み','未提出'];
 
+const times=[
+ '21:00',
+ '21:30',
+ '22:00',
+ '22:30',
+ '23:00',
+ '休み',
+ '未提出'
+];
+
+const SESSION_KEY='virgo_supabase_session';
+
+let session=null;
 let weekOffset=0;
 let editing=null;
 let remoteCasts=[];
 let loadedWeek='';
 let requestNumber=0;
+let saving=false;
+let loading=false;
+let refreshPromise=null;
+
+function el(id){
+ return document.getElementById(id);
+}
+
+function setStatus(message){
+ el('syncStatus').textContent=message;
+}
+
+function dateKey(date){
+ return date.getFullYear()+'-'+
+  String(date.getMonth()+1).padStart(2,'0')+'-'+
+  String(date.getDate()).padStart(2,'0');
+}
 
 function mondayOfWeek(offset){
  const d=new Date();
  d.setHours(12,0,0,0);
- d.setDate(d.getDate()-(d.getDay()+6)%7+offset*7);
+ d.setDate(
+  d.getDate()-(d.getDay()+6)%7+offset*7
+ );
  return d;
 }
 
-function dateKey(d){
- return d.getFullYear()+'-'+
-  String(d.getMonth()+1).padStart(2,'0')+'-'+
-  String(d.getDate()).padStart(2,'0');
+function dateText(date){
+ return (date.getMonth()+1)+'/'+date.getDate();
 }
 
-function weekKey(){
- return 'virgo_demo_shifts_'+dateKey(mondayOfWeek(weekOffset));
+function weekDates(){
+ const monday=mondayOfWeek(weekOffset);
+ const dates=[];
+
+ for(let i=0;i<6;i++){
+  const d=new Date(monday);
+  d.setDate(monday.getDate()+i);
+  dates.push(dateKey(d));
+ }
+
+ return dates;
 }
 
-function dateText(d){
- return (d.getMonth()+1)+'/'+d.getDate();
+function saveSession(data){
+ session=data;
+
+ if(data){
+  sessionStorage.setItem(
+   SESSION_KEY,
+   JSON.stringify(data)
+  );
+ }else{
+  sessionStorage.removeItem(SESSION_KEY);
+ }
+}
+
+function restoreSession(){
+ try{
+  const saved=sessionStorage.getItem(SESSION_KEY);
+  if(saved){
+   const parsed=JSON.parse(saved);
+
+   if(
+    parsed &&
+    parsed.access_token &&
+    parsed.refresh_token
+   ){
+    session=parsed;
+   }
+  }
+ }catch(error){
+  saveSession(null);
+ }
+}
+
+function showLogin(message=''){
+ el('loginScreen').classList.remove('hidden');
+ el('appScreen').classList.add('hidden');
+ el('loginError').textContent=message;
+}
+
+function showApp(){
+ el('loginScreen').classList.add('hidden');
+ el('appScreen').classList.remove('hidden');
+
+ el('loginUser').textContent=
+  session?.user?.email || '管理者ログイン中';
+}
+
+async function apiRequest(path,options={}){
+ const headers={
+  'apikey':SUPABASE_KEY,
+  'Content-Type':'application/json',
+  ...(options.headers||{})
+ };
+
+ const response=await fetch(
+  SUPABASE_URL+path,
+  {
+   ...options,
+   headers,
+   cache:'no-store'
+  }
+ );
+
+ const raw=await response.text();
+ let data=null;
+
+ if(raw){
+  try{
+   data=JSON.parse(raw);
+  }catch(error){
+   data={message:raw};
+  }
+ }
+
+ if(!response.ok){
+  const message=
+   data?.msg ||
+   data?.error_description ||
+   data?.message ||
+   data?.error ||
+   '通信エラー';
+
+  const error=new Error(message);
+  error.status=response.status;
+  throw error;
+ }
+
+ return data;
+}
+
+async function refreshSession(){
+ if(refreshPromise)return refreshPromise;
+
+ refreshPromise=(async()=>{
+  if(!session?.refresh_token){
+   throw new Error('再ログインしてください');
+  }
+
+  const result=await apiRequest(
+   '/auth/v1/token?grant_type=refresh_token',
+   {
+    method:'POST',
+    body:JSON.stringify({
+     refresh_token:session.refresh_token
+    })
+   }
+  );
+
+  saveSession(result);
+  return result;
+ })();
+
+ try{
+  return await refreshPromise;
+ }finally{
+  refreshPromise=null;
+ }
+}
+
+async function ensureSession(){
+ if(!session?.access_token){
+  throw new Error('ログインが必要です');
+ }
+
+ const expiresAt=Number(session.expires_at||0);
+
+ if(expiresAt && Date.now()/1000>expiresAt-60){
+  await refreshSession();
+ }
+}
+
+async function dbRequest(path,options={}){
+ await ensureSession();
+
+ const makeOptions=()=>({
+  ...options,
+  headers:{
+   ...(options.headers||{}),
+   'Authorization':'Bearer '+session.access_token
+  }
+ });
+
+ try{
+  return await apiRequest(path,makeOptions());
+ }catch(error){
+  if(error.status===401){
+   await refreshSession();
+   return apiRequest(path,makeOptions());
+  }
+  throw error;
+ }
+}
+
+async function login(event){
+ event.preventDefault();
+
+ const button=el('loginButton');
+ const email=el('email').value.trim();
+ const password=el('password').value;
+
+ button.disabled=true;
+ button.textContent='ログイン中...';
+ el('loginError').textContent='';
+
+ try{
+  const result=await apiRequest(
+   '/auth/v1/token?grant_type=password',
+   {
+    method:'POST',
+    body:JSON.stringify({
+     email,
+     password
+    })
+   }
+  );
+
+  if(!result?.access_token){
+   throw new Error('ログイン情報を取得できませんでした');
+  }
+
+  saveSession(result);
+
+  const allowed=await checkAdmin();
+
+  if(!allowed){
+   saveSession(null);
+   throw new Error(
+    'このアカウントには管理者権限がありません'
+   );
+  }
+
+  el('password').value='';
+  showApp();
+  await loadRemote();
+
+ }catch(error){
+  showLogin(
+   'ログインできませんでした：'+error.message
+  );
+ }finally{
+  button.disabled=false;
+  button.textContent='ログイン';
+ }
+}
+
+async function checkAdmin(){
+ const userId=session?.user?.id;
+
+ if(!userId)return false;
+
+ const rows=await dbRequest(
+  '/rest/v1/virgo_admins'+
+  '?select=user_id'+
+  '&user_id=eq.'+encodeURIComponent(userId)+
+  '&limit=1'
+ );
+
+ return Array.isArray(rows)&&rows.length===1;
+}
+
+async function logout(){
+ const token=session?.access_token;
+
+ saveSession(null);
+ remoteCasts=[];
+ loadedWeek='';
+ requestNumber++;
+ closeModal();
+
+ showLogin();
+
+ if(token){
+  try{
+   await apiRequest('/auth/v1/logout',{
+    method:'POST',
+    headers:{
+     Authorization:'Bearer '+token
+    }
+   });
+  }catch(error){
+   // 画面上のログアウトは先に完了させる
+  }
+ }
 }
 
 function changeWeek(n){
+ if(saving)return;
+
  weekOffset+=n;
  remoteCasts=[];
  loadedWeek='';
@@ -181,6 +548,8 @@ function changeWeek(n){
 }
 
 function goThisWeek(){
+ if(saving)return;
+
  weekOffset=0;
  remoteCasts=[];
  loadedWeek='';
@@ -197,9 +566,9 @@ function getDays(cast){
 function render(){
  const monday=mondayOfWeek(weekOffset);
  const saturday=new Date(monday);
- saturday.setDate(saturday.getDate()+5);
+ saturday.setDate(monday.getDate()+5);
 
- document.getElementById('weekTitle').textContent=
+ el('weekTitle').textContent=
   dateText(monday)+' 〜 '+dateText(saturday);
 
  const rows=remoteCasts.map(cast=>({
@@ -207,44 +576,49 @@ function render(){
   days:getDays(cast)
  }));
 
- const submitted=remoteCasts.filter(cast=>cast.submitted).length;
+ const entered=remoteCasts.filter(cast=>
+  getDays(cast).every(day=>day!=='未提出')
+ ).length;
 
- document.getElementById('totalCount').textContent=remoteCasts.length;
- document.getElementById('submittedCount').textContent=submitted;
- document.getElementById('missingCount').textContent=
-  remoteCasts.length-submitted;
+ el('totalCount').textContent=remoteCasts.length;
+ el('submittedCount').textContent=entered;
+ el('missingCount').textContent=
+  remoteCasts.length-entered;
 
  let head='<tr><th>キャスト</th>';
 
  for(let i=0;i<6;i++){
   const date=new Date(monday);
-  date.setDate(date.getDate()+i);
+  date.setDate(monday.getDate()+i);
 
   const count=rows.filter(row=>
-   row.days[i] !== '休み' &&
-   row.days[i] !== '未提出' &&
-   row.days[i] !== '未' &&
+   row.days[i]!=='休み' &&
+   row.days[i]!=='未提出' &&
    !!row.days[i]
   ).length;
 
-  head+='<th>'+dateText(date)+'('+weekdays[i]+')'+
-   '<span class="count">出勤 '+count+'人</span></th>';
+  head+='<th>'+
+   dateText(date)+'('+weekdays[i]+')'+
+   '<span class="count">出勤 '+
+   count+'人</span></th>';
  }
 
  head+='</tr>';
- document.getElementById('thead').innerHTML=head;
+ el('thead').innerHTML=head;
 
- const query=document.getElementById('search').value.trim();
- const tbody=document.getElementById('tbody');
+ const query=el('search').value.trim();
+ const tbody=el('tbody');
  tbody.innerHTML='';
 
  let visible=0;
 
  rows.forEach(row=>{
   if(!String(row.cast.name).includes(query))return;
+
   visible++;
 
   const tr=document.createElement('tr');
+
   const nameCell=document.createElement('td');
   nameCell.textContent=row.cast.name;
   tr.appendChild(nameCell);
@@ -256,14 +630,19 @@ function render(){
 
    btn.className='cell '+(
     value==='休み'?'off':
-    value==='未提出'||value==='未'?'missing':'work'
+    value==='未提出'?'missing':'work'
    );
 
-   btn.textContent=value==='未提出'?'未':value;
+   btn.textContent=
+    value==='未提出'?'未':value;
+
    btn.setAttribute(
     'aria-label',
-    row.cast.name+' '+weekdays[i]+'曜日 '+value+' 編集'
+    row.cast.name+' '+weekdays[i]+
+    '曜日 '+value+' 編集'
    );
+
+   btn.disabled=saving;
    btn.onclick=()=>openModal(row.cast.id,i);
 
    td.appendChild(btn);
@@ -276,193 +655,163 @@ function render(){
  if(!visible){
   const tr=document.createElement('tr');
   const td=document.createElement('td');
+
   td.colSpan=7;
   td.style.padding='20px';
   td.textContent=loadedWeek
    ? '該当するキャストがいません'
    : 'シフトを読み込み中です';
+
   tr.appendChild(td);
   tbody.appendChild(tr);
  }
 }
 
 function openModal(id,day){
+ if(saving)return;
+
  const cast=remoteCasts.find(c=>c.id===id);
  if(!cast)return;
 
  const current=getDays(cast)[day]||'未提出';
- editing={id,day};
 
- document.getElementById('modalTitle').textContent=
+ editing={
+  id,
+  day,
+  week:dateKey(mondayOfWeek(weekOffset))
+ };
+
+ el('modalTitle').textContent=
   cast.name+' のシフト変更';
 
- document.getElementById('modalInfo').textContent=
+ el('modalInfo').textContent=
   weekdays[day]+'曜日　現在：'+current;
 
- const options=document.getElementById('options');
+ const options=el('options');
  options.innerHTML='';
 
  times.forEach(time=>{
   const btn=document.createElement('button');
+
   btn.textContent=time;
 
-  if(time===current)btn.classList.add('selected');
-  if(time==='休み')btn.classList.add('rest');
-  if(time==='未提出')btn.classList.add('none');
+  if(time===current){
+   btn.classList.add('selected');
+  }
+
+  if(time==='休み'){
+   btn.classList.add('rest');
+  }
+
+  if(time==='未提出'){
+   btn.classList.add('none');
+  }
 
   btn.onclick=()=>saveShift(time);
   options.appendChild(btn);
  });
 
- document.getElementById('overlay').classList.add('open');
+ el('overlay').classList.add('open');
 }
 
 async function saveShift(value){
- if(!editing || window.shiftSaving)return;
+ if(!editing||saving)return;
 
- const cast=remoteCasts.find(c=>c.id===editing.id);
+ const target={...editing};
+ const cast=remoteCasts.find(c=>c.id===target.id);
+
  if(!cast)return;
 
- const day=editing.day;
- const monday=mondayOfWeek(weekOffset);
- const date=new Date(monday);
- date.setDate(date.getDate()+day);
+ const dates=weekDates();
+ const dateStr=dates[target.day];
 
- const dateStr=dateKey(date);
+ if(
+  !dateStr ||
+  target.week!==dateKey(mondayOfWeek(weekOffset))
+ ){
+  return;
+ }
 
- window.shiftSaving=true;
+ const previous=getDays(cast)[target.day];
+
+ if(previous===value){
+  closeModal();
+  return;
+ }
+
+ saving=true;
  closeModal();
- setStatus('変更をスプレッドシートに送信中...');
+
+ setStatus('Supabaseに保存中...');
+ render();
 
  try{
-  // no-corsではレスポンスを読めないため、
-  // 送信後に再取得して保存を確認する
-  await fetch(API_URL,{
-   method:'POST',
-   mode:'no-cors',
-   cache:'no-store',
-   headers:{
-    'Content-Type':'text/plain;charset=UTF-8'
-   },
-   body:JSON.stringify({
-    action:'demoEditShift',
-    castId:cast.id,
-    date:dateStr,
-    time:value
-   })
-  });
-
-  setStatus('送信しました。スプレッドシートへの反映を確認中...');
-
-  let verified=false;
-
-  for(let attempt=0;attempt<5;attempt++){
-   await new Promise(resolve=>
-    setTimeout(resolve,1600+attempt*600)
+  if(value==='未提出'){
+   await dbRequest(
+    '/rest/v1/virgo_shifts'+
+    '?cast_id=eq.'+encodeURIComponent(cast.id)+
+    '&shift_date=eq.'+encodeURIComponent(dateStr),
+    {
+     method:'DELETE',
+     headers:{
+      Prefer:'return=representation'
+     }
+    }
    );
 
-   const result=await fetchWeekData(dateKey(monday));
-
-   const updated=result.casts.find(c=>
-    c.id===cast.id
+  }else{
+   const saved=await dbRequest(
+    '/rest/v1/virgo_shifts'+
+    '?on_conflict=cast_id,shift_date',
+    {
+     method:'POST',
+     headers:{
+      Prefer:'resolution=merge-duplicates,return=representation'
+     },
+     body:JSON.stringify({
+      cast_id:cast.id,
+      shift_date:dateStr,
+      shift_time:value,
+      updated_at:new Date().toISOString()
+     })
+    }
    );
 
-   if(updated && updated.days[day]===value){
-    remoteCasts=result.casts;
-    loadedWeek=dateKey(monday);
-    verified=true;
-    break;
+   if(!Array.isArray(saved)||saved.length!==1){
+    throw new Error('保存結果を確認できませんでした');
    }
   }
 
-  if(verified){
-   setStatus(
-    '保存完了：'+cast.name+' '+dateStr+' → '+value
-   );
-   render();
-  }else{
-   setStatus('保存を確認できませんでした。更新して確認してください');
-   alert(
-    '保存結果を確認できませんでした。'+
-    '画面の「更新する」を押し、'+
-    'スプレッドシートも確認してください。'
-   );
-   loadRemote();
+  const currentCast=remoteCasts.find(c=>c.id===cast.id);
+
+  if(currentCast){
+   currentCast.days[target.day]=value;
   }
 
+  loadedWeek=target.week;
+  render();
+
+  setStatus(
+   '保存完了：'+cast.name+
+   ' '+dateStr+' → '+value
+  );
+
  }catch(error){
-  setStatus('送信エラー：ネットワーク接続を確認してください');
-  alert('送信に失敗しました。'+error.message);
+  setStatus('保存エラー：'+error.message);
+
+  alert(
+   'シフトを保存できませんでした。\n'+
+   error.message
+  );
+
  }finally{
-  window.shiftSaving=false;
+  saving=false;
+  render();
  }
 }
 
-// JSONPの読み込み結果をPromiseで受け取る
-function fetchWeekData(week){
- return new Promise((resolve,reject)=>{
-  const callback=
-   'virgoDemoCallback_verify_'+
-   Date.now()+'_'+
-   Math.floor(Math.random()*100000);
-
-  const script=document.createElement('script');
-  let done=false;
-
-  const timeout=setTimeout(
-   ()=>finish(new Error('取得タイムアウト')),
-   12000
-  );
-
-  function finish(error,data){
-   if(done)return;
-
-   done=true;
-   clearTimeout(timeout);
-   script.remove();
-
-   try{
-    delete window[callback];
-   }catch(e){
-    window[callback]=undefined;
-   }
-
-   if(error){
-    reject(error);
-   }else{
-    resolve(data);
-   }
-  }
-
-  window[callback]=data=>{
-   if(
-    !data ||
-    data.success!==true ||
-    data.week!==week ||
-    !Array.isArray(data.casts)
-   ){
-    finish(new Error('取得結果が不正です'));
-   }else{
-    finish(null,data);
-   }
-  };
-
-  script.onerror=()=>finish(
-   new Error('読み込み失敗')
-  );
-
-  script.src=API_URL+
-   '?action=demoShiftView'+
-   '&week='+encodeURIComponent(week)+
-   '&callback='+encodeURIComponent(callback)+
-   '&_='+Date.now();
-
-  document.head.appendChild(script);
- });
-}
-
 function closeModal(){
- document.getElementById('overlay').classList.remove('open');
+ el('overlay').classList.remove('open');
  editing=null;
 }
 
@@ -472,75 +821,69 @@ function closeOutside(event){
  }
 }
 
-function setStatus(message){
- document.getElementById('syncStatus').textContent=message;
-}
+async function loadRemote(){
+ if(!session||saving||loading)return;
 
-// スプレッドシートからJSONPで取得
-function loadRemote(){
  const week=dateKey(mondayOfWeek(weekOffset));
+ const dates=weekDates();
  const requestId=++requestNumber;
- const callbackName=
-  'virgoDemoCallback_'+requestId+'_'+Date.now();
 
- setStatus('スプレッドシートから読み込み中...');
+ loading=true;
+ setStatus('Supabaseから読み込み中...');
 
- const script=document.createElement('script');
- let finished=false;
+ try{
+  const start=dates[0];
+  const end=dates[5];
 
- function cleanup(){
-  if(finished)return;
+  const casts=await dbRequest(
+   '/rest/v1/virgo_casts'+
+   '?select=id,name'+
+   '&order=created_at.asc,id.asc'
+  );
 
-  finished=true;
-  clearTimeout(timeoutId);
-  script.remove();
-
-  try{
-   delete window[callbackName];
-  }catch(e){
-   window[callbackName]=undefined;
-  }
- }
-
- window[callbackName]=function(result){
-  cleanup();
-
-  // 週を切り替えた後の古い結果は無視
-  if(requestId!==requestNumber)return;
-  if(week!==dateKey(mondayOfWeek(weekOffset)))return;
+  const shifts=await dbRequest(
+   '/rest/v1/virgo_shifts'+
+   '?select=cast_id,shift_date,shift_time'+
+   '&shift_date=gte.'+start+
+   '&shift_date=lte.'+end
+  );
 
   if(
-   !result ||
-   result.success!==true ||
-   result.week!==week ||
-   !Array.isArray(result.casts)
+   requestId!==requestNumber ||
+   week!==dateKey(mondayOfWeek(weekOffset)) ||
+   !session
   ){
-   setStatus(
-    '取得できませんでした。更新ボタンで再試行してください'
-   );
    return;
   }
 
-  remoteCasts=result.casts
-   .filter(c=>
-    c &&
-    typeof c.id==='string' &&
-    typeof c.name==='string' &&
-    Array.isArray(c.days)
+  if(!Array.isArray(casts)||!Array.isArray(shifts)){
+   throw new Error('取得データが不正です');
+  }
+
+  const shiftMap=new Map();
+
+  shifts.forEach(shift=>{
+   shiftMap.set(
+    shift.cast_id+'|'+shift.shift_date,
+    shift.shift_time
+   );
+  });
+
+  remoteCasts=casts.map(cast=>({
+   id:cast.id,
+   name:cast.name,
+   days:dates.map(date=>
+    shiftMap.get(cast.id+'|'+date)||'未提出'
    )
-   .map(c=>({
-    id:c.id,
-    name:c.name,
-    days:c.days.slice(0,6),
-    submitted:c.submitted===true
-   }));
+  }));
 
   loadedWeek=week;
+  render();
 
   const now=new Date();
 
   setStatus(
-   'スプレッドシートと接続済み ・ '+
+   'Supabaseと接続済み ・ '+
    now.toLocaleTimeString('ja-JP',{
     hour:'2-digit',
     minute:'2-digit',
@@ -549,61 +892,81 @@ function loadRemote(){
    ' 更新'
   );
 
-  render();
- };
+ }catch(error){
+  if(requestId!==requestNumber)return;
 
- script.onerror=function(){
-  cleanup();
+  setStatus('読み込みエラー：'+error.message);
 
-  if(requestId===requestNumber){
-   setStatus(
-    '接続エラー。APIのURLとデプロイを確認してください'
-   );
+  if(error.status===401){
+   showLogin('ログインし直してください');
   }
- };
 
- const timeoutId=setTimeout(()=>{
-  cleanup();
-
-  if(requestId===requestNumber){
-   setStatus(
-    '読み込みがタイムアウトしました。再試行してください'
-   );
-  }
- },15000);
-
- script.src=API_URL+
-  '?action=demoShiftView'+
-  '&week='+encodeURIComponent(week)+
-  '&callback='+encodeURIComponent(callbackName)+
-  '&_='+Date.now();
-
- document.head.appendChild(script);
+ }finally{
+  loading=false;
+ }
 }
 
-document.addEventListener('keydown',e=>{
- if(e.key==='Escape'){
+async function start(){
+ restoreSession();
+ render();
+
+ if(!session){
+  showLogin();
+  return;
+ }
+
+ try{
+  await ensureSession();
+
+  const allowed=await checkAdmin();
+
+  if(!allowed){
+   saveSession(null);
+   showLogin('管理者権限がありません');
+   return;
+  }
+
+  showApp();
+  await loadRemote();
+
+ }catch(error){
+  saveSession(null);
+  showLogin(
+   'ログインし直してください：'+error.message
+  );
+ }
+}
+
+el('loginForm').addEventListener('submit',login);
+
+document.addEventListener('keydown',event=>{
+ if(event.key==='Escape'){
   closeModal();
  }
 });
 
 window.addEventListener('pageshow',()=>{
- render();
- loadRemote();
+ if(session&&!loading&&!saving){
+  loadRemote();
+ }
 });
 
-// 30秒ごとにシートの更新を確認
+/*
+ * 別端末の変更を約8秒ごとに確認。
+ * 保存中や非表示タブでは取得しない。
+ */
 setInterval(()=>{
  if(
-  document.visibilityState==='visible' &&
-  !window.shiftSaving
+  session &&
+  !saving &&
+  !loading &&
+  document.visibilityState==='visible'
  ){
   loadRemote();
  }
-},30000);
+},8000);
 
-render();
-loadRemote();
+start();
 </script>
 </body>
 </html>
