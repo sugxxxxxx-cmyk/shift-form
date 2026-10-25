@@ -123,8 +123,8 @@ thead th:first-child{background:#edf1f7;z-index:4}
  <p class="note">
   ※ LINE提出内容はスプレッドシートから読み込みます。<br>
   ※ 約30秒ごとに更新を確認します。<br>
-  ※ マスをタップすると、このブラウザ内でシフトを変更できます。<br>
-  ※ 管理画面での変更は、まだスプレッドシートには書き戻しません。<br>
+  ※ マスをタップするとシフトを変更し、スプレッドシートに保存します。<br>
+  ※ 保存後にシートを再取得し、別端末でも同じ内容を表示します。<br>
   ※ テスト専用です。実在するキャスト情報は登録しないでください。
  </p>
 </main>
@@ -188,36 +188,10 @@ function goThisWeek(){
  loadRemote();
 }
 
-function getLocalData(){
- try{
-  const value=JSON.parse(localStorage.getItem(weekKey()));
-  if(value && !Array.isArray(value) && typeof value==='object'){
-   return value;
-  }
- }catch(e){}
- return {};
-}
-
 function getDays(cast){
- const base=Array.isArray(cast.days)
-  ? [...cast.days]
+ return Array.isArray(cast.days)
+  ? cast.days.slice(0,6)
   : Array(6).fill('未提出');
-
- const local=getLocalData()[cast.id];
-
- if(!local || !Array.isArray(local.days))return base;
-
- const manualDays=Array.isArray(local.manualDays)
-  ? local.manualDays
-  : [0,1,2,3,4,5];
-
- manualDays.forEach(i=>{
-  if(i>=0 && i<6 && times.includes(local.days[i])){
-   base[i]=local.days[i];
-  }
- });
-
- return base;
 }
 
 function render(){
@@ -343,45 +317,148 @@ function openModal(id,day){
  document.getElementById('overlay').classList.add('open');
 }
 
-function saveShift(value){
- if(!editing)return;
+async function saveShift(value){
+ if(!editing || window.shiftSaving)return;
 
  const cast=remoteCasts.find(c=>c.id===editing.id);
- if(!cast){
-  closeModal();
-  return;
- }
+ if(!cast)return;
 
- const data=getLocalData();
- const old=data[editing.id];
- const days=getDays(cast);
+ const day=editing.day;
+ const monday=mondayOfWeek(weekOffset);
+ const date=new Date(monday);
+ date.setDate(date.getDate()+day);
 
- days[editing.day]=value;
+ const dateStr=dateKey(date);
 
- const manualDays=old && Array.isArray(old.manualDays)
-  ? [...old.manualDays]
-  : old && Array.isArray(old.days)
-    ? [0,1,2,3,4,5]
-    : [];
-
- if(!manualDays.includes(editing.day)){
-  manualDays.push(editing.day);
- }
-
- data[editing.id]={
-  days,
-  manualDays,
-  source:'manual',
-  updatedAt:new Date().toISOString()
- };
+ window.shiftSaving=true;
+ closeModal();
+ setStatus('変更をスプレッドシートに送信中...');
 
  try{
-  localStorage.setItem(weekKey(),JSON.stringify(data));
-  closeModal();
-  render();
+  // no-corsではレスポンスを読めないため、
+  // 送信後に再取得して保存を確認する
+  await fetch(API_URL,{
+   method:'POST',
+   mode:'no-cors',
+   cache:'no-store',
+   headers:{
+    'Content-Type':'text/plain;charset=UTF-8'
+   },
+   body:JSON.stringify({
+    action:'demoEditShift',
+    castId:cast.id,
+    date:dateStr,
+    time:value
+   })
+  });
+
+  setStatus('送信しました。スプレッドシートへの反映を確認中...');
+
+  let verified=false;
+
+  for(let attempt=0;attempt<5;attempt++){
+   await new Promise(resolve=>
+    setTimeout(resolve,1600+attempt*600)
+   );
+
+   const result=await fetchWeekData(dateKey(monday));
+
+   const updated=result.casts.find(c=>
+    c.id===cast.id
+   );
+
+   if(updated && updated.days[day]===value){
+    remoteCasts=result.casts;
+    loadedWeek=dateKey(monday);
+    verified=true;
+    break;
+   }
+  }
+
+  if(verified){
+   setStatus(
+    '保存完了：'+cast.name+' '+dateStr+' → '+value
+   );
+   render();
+  }else{
+   setStatus('保存を確認できませんでした。更新して確認してください');
+   alert(
+    '保存結果を確認できませんでした。'+
+    '画面の「更新する」を押し、'+
+    'スプレッドシートも確認してください。'
+   );
+   loadRemote();
+  }
+
  }catch(error){
-  alert('保存できませんでした：'+error.message);
+  setStatus('送信エラー：ネットワーク接続を確認してください');
+  alert('送信に失敗しました。'+error.message);
+ }finally{
+  window.shiftSaving=false;
  }
+}
+
+// JSONPの読み込み結果をPromiseで受け取る
+function fetchWeekData(week){
+ return new Promise((resolve,reject)=>{
+  const callback=
+   'virgoDemoCallback_verify_'+
+   Date.now()+'_'+
+   Math.floor(Math.random()*100000);
+
+  const script=document.createElement('script');
+  let done=false;
+
+  const timeout=setTimeout(
+   ()=>finish(new Error('取得タイムアウト')),
+   12000
+  );
+
+  function finish(error,data){
+   if(done)return;
+
+   done=true;
+   clearTimeout(timeout);
+   script.remove();
+
+   try{
+    delete window[callback];
+   }catch(e){
+    window[callback]=undefined;
+   }
+
+   if(error){
+    reject(error);
+   }else{
+    resolve(data);
+   }
+  }
+
+  window[callback]=data=>{
+   if(
+    !data ||
+    data.success!==true ||
+    data.week!==week ||
+    !Array.isArray(data.casts)
+   ){
+    finish(new Error('取得結果が不正です'));
+   }else{
+    finish(null,data);
+   }
+  };
+
+  script.onerror=()=>finish(
+   new Error('読み込み失敗')
+  );
+
+  script.src=API_URL+
+   '?action=demoShiftView'+
+   '&week='+encodeURIComponent(week)+
+   '&callback='+encodeURIComponent(callback)+
+   '&_='+Date.now();
+
+  document.head.appendChild(script);
+ });
 }
 
 function closeModal(){
@@ -390,7 +467,9 @@ function closeModal(){
 }
 
 function closeOutside(event){
- if(event.target.id==='overlay')closeModal();
+ if(event.target.id==='overlay'){
+  closeModal();
+ }
 }
 
 function setStatus(message){
@@ -401,7 +480,8 @@ function setStatus(message){
 function loadRemote(){
  const week=dateKey(mondayOfWeek(weekOffset));
  const requestId=++requestNumber;
- const callbackName='virgoDemoCallback_'+requestId+'_'+Date.now();
+ const callbackName=
+  'virgoDemoCallback_'+requestId+'_'+Date.now();
 
  setStatus('スプレッドシートから読み込み中...');
 
@@ -410,11 +490,16 @@ function loadRemote(){
 
  function cleanup(){
   if(finished)return;
+
   finished=true;
   clearTimeout(timeoutId);
   script.remove();
-  try{delete window[callbackName];}
-  catch(e){window[callbackName]=undefined;}
+
+  try{
+   delete window[callbackName];
+  }catch(e){
+   window[callbackName]=undefined;
+  }
  }
 
  window[callbackName]=function(result){
@@ -430,7 +515,9 @@ function loadRemote(){
    result.week!==week ||
    !Array.isArray(result.casts)
   ){
-   setStatus('取得できませんでした。更新ボタンで再試行してください');
+   setStatus(
+    '取得できませんでした。更新ボタンで再試行してください'
+   );
    return;
   }
 
@@ -451,13 +538,15 @@ function loadRemote(){
   loadedWeek=week;
 
   const now=new Date();
+
   setStatus(
    'スプレッドシートと接続済み ・ '+
    now.toLocaleTimeString('ja-JP',{
     hour:'2-digit',
     minute:'2-digit',
     second:'2-digit'
-   })+' 更新'
+   })+
+   ' 更新'
   );
 
   render();
@@ -465,15 +554,21 @@ function loadRemote(){
 
  script.onerror=function(){
   cleanup();
+
   if(requestId===requestNumber){
-   setStatus('接続エラー。APIのURLとデプロイを確認してください');
+   setStatus(
+    '接続エラー。APIのURLとデプロイを確認してください'
+   );
   }
  };
 
  const timeoutId=setTimeout(()=>{
   cleanup();
+
   if(requestId===requestNumber){
-   setStatus('読み込みがタイムアウトしました。再試行してください');
+   setStatus(
+    '読み込みがタイムアウトしました。再試行してください'
+   );
   }
  },15000);
 
@@ -487,10 +582,10 @@ function loadRemote(){
 }
 
 document.addEventListener('keydown',e=>{
- if(e.key==='Escape')closeModal();
+ if(e.key==='Escape'){
+  closeModal();
+ }
 });
-
-window.addEventListener('storage',render);
 
 window.addEventListener('pageshow',()=>{
  render();
@@ -499,7 +594,10 @@ window.addEventListener('pageshow',()=>{
 
 // 30秒ごとにシートの更新を確認
 setInterval(()=>{
- if(document.visibilityState==='visible'){
+ if(
+  document.visibilityState==='visible' &&
+  !window.shiftSaving
+ ){
   loadRemote();
  }
 },30000);
