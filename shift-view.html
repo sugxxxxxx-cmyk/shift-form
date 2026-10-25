@@ -77,30 +77,30 @@ thead th:first-child{background:#edf1f7;z-index:4}
 <span><i style="background:#ffe3e5"></i>未提出</span>
 </div>
 <p class="note">
-※ 架空データを使用したデモ画面です。<br>
-※ 実際のキャスト情報とは接続していません。
+※ キャスト名簿はスタッフ管理画面と連動しています。<br>
+※ シフト内容はまだ架空のデモデータです。
 </p>
 </main>
 
 <script>
-const names=[
-'さくら','花子','美咲','あかり','ゆい','りな',
-'みお','れいな','なな','ひなた','あおい','あすか'
+const initialNames=[
+ 'さくら','花子','美咲','あかり','ゆい','りな',
+ 'みお','れいな','なな','ひなた','あおい','あすか'
 ];
 
 const samples=[
-['21:00','21:00','休み','22:00','21:00','21:30'],
-['休み','21:30','21:00','21:00','22:00','21:00'],
-['22:00','休み','21:00','21:30','21:00','休み'],
-null,
-['21:30','22:00','休み','21:00','21:00','21:30'],
-null,
-['21:00','21:00','21:30','休み','22:00','21:00'],
-['休み','22:00','21:00','21:30','21:00','22:00'],
-null,
-['21:00','21:30','休み','21:00','21:00','21:00'],
-['21:00','休み','22:30','21:00','21:30','休み'],
-['22:00','21:00','21:30','休み','21:00','22:30']
+ ['21:00','21:00','休み','22:00','21:00','21:30'],
+ ['休み','21:30','21:00','21:00','22:00','21:00'],
+ ['22:00','休み','21:00','21:30','21:00','休み'],
+ null,
+ ['21:30','22:00','休み','21:00','21:00','21:30'],
+ null,
+ ['21:00','21:00','21:30','休み','22:00','21:00'],
+ ['休み','22:00','21:00','21:30','21:00','22:00'],
+ null,
+ ['21:00','21:30','休み','21:00','21:00','21:00'],
+ ['21:00','休み','22:30','21:00','21:30','休み'],
+ ['22:00','21:00','21:30','休み','21:00','22:30']
 ];
 
 let weekOffset=0;
@@ -123,18 +123,56 @@ function goThisWeek(){
  weekOffset=0;
  render();
 }
+
+function getCasts(){
+ try{
+  const saved=JSON.parse(localStorage.getItem('virgo_demo_casts'));
+  if(Array.isArray(saved))return saved;
+ }catch(e){}
+
+ return initialNames.map((name,i)=>({
+  id:'initial_'+i,
+  name,
+  status:i===0?'連携済み':'未連携'
+ }));
+}
+
+function escapeHtml(str){
+ return String(str).replace(/[&<>"']/g,c=>({
+  '&':'&amp;',
+  '<':'&lt;',
+  '>':'&gt;',
+  '"':'&quot;',
+  "'":'&#39;'
+ }[c]));
+}
+
 function render(){
  const monday=mondayOfWeek(weekOffset);
  const saturday=new Date(monday);
  saturday.setDate(monday.getDate()+5);
+
  document.getElementById('weekTitle').textContent=
  dateText(monday)+' 〜 '+dateText(saturday);
+
+ const casts=getCasts();
+
+ // デモ用のシフトをキャスト名と紐づける
+ const rows=casts.map(cast=>{
+  const originalIndex=initialNames.indexOf(cast.name);
+  return {
+   name:cast.name,
+   shift:originalIndex>=0?samples[originalIndex]:null
+  };
+ });
 
  let head='<tr><th>キャスト</th>';
  for(let i=0;i<6;i++){
   const date=new Date(monday);
   date.setDate(monday.getDate()+i);
-  const count=samples.filter(s=>s&&s[i]!=='休み').length;
+  const count=rows.filter(r=>r.shift&&
+    r.shift[i]!=='休み').length;
+
   head+='<th>'+dateText(date)+'('+weekdays[i]+')'
     +'<span class="count">出勤 '+count+'人</span></th>';
  }
@@ -143,20 +181,30 @@ function render(){
 
  const query=document.getElementById('search').value.trim();
  let html='';
- names.forEach((name,index)=>{
-  if(!name.includes(query))return;
-  const shift=samples[index];
-  html+='<tr><td>'+name+'</td>';
+
+ rows.forEach(row=>{
+  if(!row.name.includes(query))return;
+
+  const shift=row.shift;
+  html+='<tr><td>'+escapeHtml(row.name)+'</td>';
+
   for(let i=0;i<6;i++){
    const value=shift?shift[i]:'未';
-   const cls=!shift?'missing':value==='休み'?'off':'work';
-   html+='<td><div class="cell '+cls+'">'+value+'</div></td>';
+   const cls=!shift?'missing':
+    value==='休み'?'off':'work';
+
+   html+='<td><div class="cell '+cls+'">'+
+     escapeHtml(value)+'</div></td>';
   }
   html+='</tr>';
  });
+
  document.getElementById('tbody').innerHTML=html||
  '<tr><td colspan="7">該当するキャストがいません</td></tr>';
 }
+
+window.addEventListener('storage',render);
+window.addEventListener('pageshow',render);
 render();
 </script>
 </body>
