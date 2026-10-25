@@ -1,0 +1,533 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Virgo｜スタッフシフト管理</title>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:#f5f6fa;
+  color:#202637;
+  font-family:-apple-system,BlinkMacSystemFont,
+  "Hiragino Kaku Gothic ProN",sans-serif;
+}
+header{
+  background:#172238;
+  color:white;
+  padding:18px 20px;
+}
+header h1{margin:0;font-size:21px}
+header small{color:#b7c4da}
+nav{
+  display:flex;
+  gap:8px;
+  overflow-x:auto;
+  background:white;
+  padding:12px;
+  border-bottom:1px solid #e5e7eb;
+}
+nav a{
+  color:#46536a;
+  text-decoration:none;
+  white-space:nowrap;
+  padding:10px 14px;
+  border-radius:9px;
+  font-size:13px;
+}
+nav a.active{
+  background:#172238;
+  color:white;
+}
+main{max-width:1200px;margin:auto;padding:20px}
+h2{font-size:20px;margin:0 0 8px}
+.note{font-size:13px;color:#69758a}
+.panel{
+  background:white;
+  border:1px solid #e5e7eb;
+  border-radius:14px;
+  padding:18px;
+  margin:16px 0;
+}
+.weekbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  flex-wrap:wrap;
+}
+button{
+  cursor:pointer;
+  border:1px solid #d7dce5;
+  border-radius:8px;
+  background:white;
+  padding:10px 13px;
+  font-weight:600;
+}
+button.primary{
+  background:#172238;
+  border-color:#172238;
+  color:white;
+}
+button.green{
+  background:#12805c;
+  border-color:#12805c;
+  color:white;
+}
+button.danger{
+  color:#b42332;
+}
+button:disabled{
+  opacity:.5;
+  cursor:not-allowed;
+}
+.weektitle{font-weight:700;text-align:center}
+.stats{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  margin-top:16px;
+}
+.stat{
+  background:#f5f6fa;
+  border-radius:10px;
+  padding:13px;
+}
+.stat strong{
+  display:block;
+  font-size:24px;
+  margin-top:5px;
+}
+.stat small{color:#64748b}
+.toolbar{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+}
+input[type=search]{
+  padding:11px;
+  border:1px solid #d7dce5;
+  border-radius:8px;
+  font-size:14px;
+  width:220px;
+  max-width:100%;
+}
+.tablewrap{overflow-x:auto;margin-top:15px}
+table{
+  border-collapse:separate;
+  border-spacing:0;
+  width:100%;
+  min-width:790px;
+}
+th,td{
+  border-bottom:1px solid #e9edf2;
+  padding:12px 8px;
+  text-align:center;
+  font-size:13px;
+}
+th{background:#f8fafc;color:#475569}
+th:first-child,td:first-child{
+  text-align:left;
+  position:sticky;
+  left:0;
+  background:white;
+  min-width:115px;
+}
+th:first-child{background:#f8fafc}
+.daybtn{
+  padding:9px 5px;
+  min-width:62px;
+  border:1px solid #dce2ea;
+  font-size:12px;
+}
+.work{
+  background:#dcfce7;
+  border-color:#9bd8b2;
+  color:#166534;
+}
+.off{
+  background:#f1f5f9;
+  color:#64748b;
+}
+.pending{
+  background:#fff1e5;
+  color:#b45309;
+}
+.status{
+  display:inline-block;
+  padding:5px 9px;
+  border-radius:20px;
+  font-size:11px;
+  white-space:nowrap;
+}
+.submitted{background:#e0f2fe;color:#0369a1}
+.unsubmitted{background:#fee2e2;color:#b91c1c}
+.confirmed{background:#dcfce7;color:#166534}
+.actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+  margin-top:16px;
+}
+.legend{
+  display:flex;
+  gap:14px;
+  flex-wrap:wrap;
+  font-size:12px;
+  color:#64748b;
+  margin-top:14px;
+}
+.notice{
+  background:#fff8e7;
+  border:1px solid #f2dfaa;
+  padding:12px;
+  border-radius:10px;
+  font-size:12px;
+  color:#795400;
+}
+@media(max-width:600px){
+  main{padding:12px}
+  .panel{padding:13px}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .weektitle{font-size:13px}
+  header h1{font-size:18px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Virgo Manager</h1>
+  <small>スタッフシフト管理</small>
+</header>
+
+<nav>
+  <a href="shift-view.html">キャストシフト一覧</a>
+  <a href="admin.html">シフト管理</a>
+  <a href="staff-schedule.html" class="active">
+    スタッフシフト
+  </a>
+  <a href="staff.html">スタッフ管理</a>
+</nav>
+
+<main>
+  <h2>スタッフシフト</h2>
+  <p class="note">
+    スタッフの出勤・休みを確認して、週単位で確定します。
+  </p>
+
+  <div class="notice">
+    現在は動作確認用のデモです。
+    実際のLINE提出データとの連携やログイン権限は、
+    今後実装します。
+  </div>
+
+  <section class="panel">
+    <div class="weekbar">
+      <button onclick="moveWeek(-1)">← 前週</button>
+      <div class="weektitle" id="weekTitle"></div>
+      <button onclick="moveWeek(1)">翌週 →</button>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <small>登録スタッフ</small>
+        <strong id="totalCount">0</strong>
+      </div>
+      <div class="stat">
+        <small>提出済み</small>
+        <strong id="submittedCount">0</strong>
+      </div>
+      <div class="stat">
+        <small>未提出</small>
+        <strong id="missingCount">0</strong>
+      </div>
+      <div class="stat">
+        <small>確定状況</small>
+        <strong id="confirmedCount">未確定</strong>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="toolbar">
+      <div>
+        <h2>週間シフト一覧</h2>
+        <span class="note">
+          出勤・休みのボタンを押すと変更できます。
+        </span>
+      </div>
+      <input
+        type="search"
+        id="search"
+        placeholder="スタッフ名で検索"
+        oninput="renderTable()"
+      >
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr id="tableHead"></tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+
+    <div class="legend">
+      <span>🟢 出勤</span>
+      <span>⚪ 休み</span>
+      <span>🟠 未提出</span>
+    </div>
+
+    <div class="actions">
+      <button onclick="resetDemo()" class="danger">
+        デモを初期化
+      </button>
+      <button onclick="toggleConfirm()" class="green"
+        id="confirmButton">
+        この週を確定
+      </button>
+    </div>
+  </section>
+</main>
+
+<script>
+const STAFF = [
+  "田中",
+  "佐藤",
+  "山本",
+  "中村",
+  "高橋",
+  "伊藤",
+  "小林",
+  "松本"
+];
+
+const WEEKDAYS = [
+  "日","月","火","水","木","金","土"
+];
+
+let weekOffset = 0;
+
+function getMonday(offset = 0){
+  const today = new Date();
+  today.setHours(12,0,0,0);
+  const day = today.getDay();
+  const diff = (day + 6) % 7;
+  today.setDate(today.getDate() - diff + offset*7);
+  return today;
+}
+
+function dateKey(date){
+  return date.getFullYear() + "-" +
+    String(date.getMonth()+1).padStart(2,"0") + "-" +
+    String(date.getDate()).padStart(2,"0");
+}
+
+function getDates(){
+  const monday = getMonday(weekOffset);
+  return Array.from({length:7},(_,i)=>{
+    const d = new Date(monday);
+    d.setDate(monday.getDate()+i);
+    return d;
+  });
+}
+
+function storageKey(){
+  return "virgo_staff_shift_" +
+    dateKey(getMonday(weekOffset));
+}
+
+function createDemo(){
+  const dates = getDates();
+  const members = STAFF.map((name,i)=>{
+    const submitted = i < 6;
+    const days = {};
+    dates.forEach((d,j)=>{
+      days[dateKey(d)] = submitted
+        ? ((i+j)%4===0 ? "off":"work")
+        : "pending";
+    });
+    return {name,submitted,days};
+  });
+  return {confirmed:false,members};
+}
+
+function loadData(){
+  const saved = localStorage.getItem(storageKey());
+  if(saved){
+    try{return JSON.parse(saved)}
+    catch(e){}
+  }
+  return createDemo();
+}
+
+function saveData(data){
+  localStorage.setItem(
+    storageKey(),JSON.stringify(data)
+  );
+}
+
+function formatDate(d){
+  return (d.getMonth()+1)+"/"+d.getDate();
+}
+
+function moveWeek(n){
+  weekOffset += n;
+  render();
+}
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g,c=>({
+    "&":"&amp;",
+    "<":"&lt;",
+    ">":"&gt;",
+    '"':"&quot;",
+    "'":"&#39;"
+  }[c]));
+}
+
+function render(){
+  const dates = getDates();
+  const data = loadData();
+  const last = dates[6];
+
+  document.getElementById("weekTitle").textContent =
+    dates[0].getFullYear()+"年 "+
+    formatDate(dates[0])+" 〜 "+formatDate(last);
+
+  document.getElementById("totalCount").textContent =
+    data.members.length;
+
+  const submitted = data.members.filter(
+    m=>m.submitted
+  ).length;
+
+  document.getElementById("submittedCount").textContent =
+    submitted;
+
+  document.getElementById("missingCount").textContent =
+    data.members.length-submitted;
+
+  document.getElementById("confirmedCount").textContent =
+    data.confirmed ? "確定済" : "未確定";
+
+  document.getElementById("confirmButton").textContent =
+    data.confirmed ? "確定を解除" : "この週を確定";
+
+  document.getElementById("tableHead").innerHTML =
+    "<th>スタッフ</th>" +
+    dates.map(d=>
+      "<th>"+formatDate(d)+
+      "（"+WEEKDAYS[d.getDay()]+"）</th>"
+    ).join("") +
+    "<th>提出状況</th>";
+
+  renderTable();
+}
+
+function renderTable(){
+  const data = loadData();
+  const dates = getDates();
+  const keyword = document.getElementById("search")
+    .value.trim().toLowerCase();
+
+  const rows = data.members
+    .map((m,i)=>({...m,index:i}))
+    .filter(m=>m.name.toLowerCase().includes(keyword));
+
+  document.getElementById("tableBody").innerHTML =
+    rows.map(m=>{
+      const cells = dates.map(d=>{
+        const key = dateKey(d);
+        const value = m.days[key] || "pending";
+        const label = value==="work" ? "出勤"
+          : value==="off" ? "休み" : "未提出";
+
+        return "<td><button class='daybtn "+value+
+          "' "+(data.confirmed?"disabled":"")+
+          " onclick='changeDay("+m.index+","+
+          JSON.stringify(key)+")'>"+
+          label+"</button></td>";
+      }).join("");
+
+      const status = data.confirmed
+        ? "<span class='status confirmed'>確定済</span>"
+        : m.submitted
+        ? "<span class='status submitted'>提出済</span>"
+        : "<span class='status unsubmitted'>未提出</span>";
+
+      return "<tr><td><strong>"+
+        escapeHtml(m.name)+"</strong></td>"+
+        cells+"<td>"+status+"</td></tr>";
+    }).join("");
+}
+
+function changeDay(index,key){
+  const data = loadData();
+  if(data.confirmed){
+    alert("確定済みです。変更するには確定を解除してください。");
+    return;
+  }
+
+  const member = data.members[index];
+  if(!member)return;
+
+  const current = member.days[key] || "pending";
+
+  // 未提出 → 出勤 → 休み → 出勤
+  member.days[key] =
+    current==="work" ? "off" : "work";
+
+  saveData(data);
+  render();
+}
+
+function toggleConfirm(){
+  const data = loadData();
+
+  if(data.confirmed){
+    if(!confirm("この週の確定を解除しますか？"))return;
+    data.confirmed = false;
+  }else{
+    const missing = data.members.filter(
+      m=>Object.values(m.days).some(v=>v==="pending")
+    ).length;
+
+    if(missing>0){
+      alert(
+        "未提出のスタッフが"+missing+
+        "名います。\n出勤・休みを設定してから確定してください。"
+      );
+      return;
+    }
+
+    if(!confirm("この週のスタッフシフトを確定しますか？"))
+      return;
+
+    data.confirmed = true;
+  }
+
+  saveData(data);
+  render();
+}
+
+function resetDemo(){
+  if(!confirm("この週のデモデータを初期化しますか？"))
+    return;
+
+  localStorage.removeItem(storageKey());
+  render();
+}
+
+render();
+</script>
+
+</body>
+</html>
