@@ -29,6 +29,7 @@ button{background:#fff;border:1px solid #dce2eb;border-radius:9px;padding:11px;f
 .badge{border-radius:20px;padding:6px 10px;font-size:12px;font-weight:bold}
 .done{background:#d8f8e5;color:#087a3f}
 .missing{background:#ffe3e5;color:#d33b48}
+.manual{background:#e7f1ff;color:#2455a4}
 input,select{border:1px solid #dce2eb;border-radius:8px;padding:10px;font-size:15px;max-width:100%}
 .controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
 .controls input{flex:1;min-width:140px}
@@ -38,12 +39,13 @@ input,select{border:1px solid #dce2eb;border-radius:8px;padding:10px;font-size:1
 .primary{background:#087a4a;color:#fff;border:0;font-weight:bold}
 .note{font-size:12px;color:#737e8e;line-height:1.7;padding:0 16px 20px}
 @media(max-width:600px){
- .edit-row{grid-template-columns:1fr}
- .week strong{font-size:14px}
+.edit-row{grid-template-columns:1fr}
+.week strong{font-size:14px}
 }
 </style>
 </head>
 <body>
+
 <header>
 <h1>キャストシフト管理</h1>
 <small>Virgo Shift Manager ・ DEMO</small>
@@ -60,19 +62,27 @@ input,select{border:1px solid #dce2eb;border-radius:8px;padding:10px;font-size:1
 <button onclick="changeWeek(-1)">◀</button>
 <div style="text-align:center">
 <strong id="weekTitle"></strong>
-<div><button onclick="goThisWeek()" style="padding:5px 10px;margin-top:5px;font-size:12px">今週</button></div>
+<div>
+<button onclick="goThisWeek()" style="padding:5px 10px;margin-top:5px;font-size:12px">今週</button>
+</div>
 </div>
 <button onclick="changeWeek(1)">▶</button>
 </div>
 
 <div class="summary">
-<div class="metric"><span>登録人数</span><b id="total">0</b></div>
-<div class="metric"><span>提出済み</span><b id="done" style="color:#087a4a">0</b></div>
-<div class="metric"><span>未提出</span><b id="missing" style="color:#dc4450">0</b></div>
+<div class="metric">
+<span>登録人数</span><b id="total">0</b>
+</div>
+<div class="metric">
+<span>入力済み</span><b id="done" style="color:#087a4a">0</b>
+</div>
+<div class="metric">
+<span>未提出・未入力</span><b id="missing" style="color:#dc4450">0</b>
+</div>
 </div>
 
 <div class="section">
-<h2>提出状況</h2>
+<h2>提出・入力状況</h2>
 <div class="controls">
 <input id="search" placeholder="キャスト名で検索" oninput="render()">
 <button id="filter" onclick="toggleFilter()">未提出のみ</button>
@@ -85,6 +95,7 @@ input,select{border:1px solid #dce2eb;border-radius:8px;padding:10px;font-size:1
 <p style="font-size:13px;color:#667085">
 キャスト・曜日・時間を選んで修正できます。
 </p>
+
 <div class="edit-row">
 <div>
 <label>キャスト</label>
@@ -113,22 +124,25 @@ input,select{border:1px solid #dce2eb;border-radius:8px;padding:10px;font-size:1
 </select>
 </div>
 </div>
+
 <button class="primary" onclick="saveShift()">この内容で修正</button>
 <p id="message" style="font-size:13px;color:#087a4a"></p>
 </div>
 
 <p class="note">
-※ 架空データを使用したデモです。<br>
-※ 修正はこのページ内の表示だけに反映され、スプレッドシートやシフト一覧ページには保存されません。<br>
-※ 実際のキャスト情報とは接続していません。
+※ デモデータを使用しています。<br>
+※ 同じブラウザ内のシフト一覧と連動します。<br>
+※ LINEからの本人提出やGoogleスプレッドシートとはまだ接続していません。<br>
+※ 本番運用前にログイン・アクセス制限を実装します。
 </p>
 </main>
 
 <script>
-const names=[
+const initialNames=[
 'さくら','花子','美咲','あかり','ゆい','りな',
 'みお','れいな','なな','ひなた','あおい','あすか'
 ];
+
 const baseSamples=[
 ['21:00','21:00','休み','22:00','21:00','21:30'],
 ['休み','21:30','21:00','21:00','22:00','21:00'],
@@ -143,7 +157,8 @@ null,
 ['21:00','休み','22:30','21:00','21:30','休み'],
 ['22:00','21:00','21:30','休み','21:00','22:30']
 ];
-let samples=baseSamples.map(s=>s?[...s]:null);
+
+const weekdays=['月','火','水','木','金','土'];
 let weekOffset=0;
 let onlyMissing=false;
 
@@ -153,56 +168,181 @@ function mondayOfWeek(offset){
  d.setDate(d.getDate()-(d.getDay()+6)%7+offset*7);
  return d;
 }
+
+function dateKey(d){
+ return d.getFullYear()+'-'+
+ String(d.getMonth()+1).padStart(2,'0')+'-'+
+ String(d.getDate()).padStart(2,'0');
+}
+
+function weekKey(){
+ return 'virgo_demo_shifts_'+
+ dateKey(mondayOfWeek(weekOffset));
+}
+
 function dateText(d){
  return (d.getMonth()+1)+'/'+d.getDate();
 }
-function changeWeek(n){weekOffset+=n;render()}
-function goThisWeek(){weekOffset=0;render()}
+
+function getCasts(){
+ try{
+  const saved=JSON.parse(localStorage.getItem('virgo_demo_casts'));
+  if(Array.isArray(saved))return saved;
+ }catch(e){}
+ return initialNames.map((name,i)=>({
+  id:'initial_'+i,name,
+  status:i===0?'連携済み':'未連携'
+ }));
+}
+
+function castId(cast){
+ return cast.id||'name_'+cast.name;
+}
+
+function getData(){
+ try{
+  const saved=JSON.parse(localStorage.getItem(weekKey()));
+  if(saved&&typeof saved==='object')return saved;
+ }catch(e){}
+ return {};
+}
+
+function saveData(data){
+ localStorage.setItem(weekKey(),JSON.stringify(data));
+}
+
+function getShift(cast,data){
+ const id=castId(cast);
+ if(Object.prototype.hasOwnProperty.call(data,id)){
+  return data[id].days;
+ }
+ const i=initialNames.indexOf(cast.name);
+ return i>=0?baseSamples[i]:null;
+}
+
+function getStatus(cast,data){
+ const id=castId(cast);
+ if(Object.prototype.hasOwnProperty.call(data,id)){
+  return data[id].source||'manual';
+ }
+ return getShift(cast,data)?'sample':'missing';
+}
+
+function changeWeek(n){
+ weekOffset+=n;
+ render();
+}
+
+function goThisWeek(){
+ weekOffset=0;
+ render();
+}
+
 function toggleFilter(){
  onlyMissing=!onlyMissing;
  document.getElementById('filter').textContent=
  onlyMissing?'全員表示':'未提出のみ';
  render();
 }
+
+function escapeHtml(str){
+ return String(str).replace(/[&<>"']/g,c=>({
+  '&':'&amp;','<':'&lt;','>':'&gt;',
+  '"':'&quot;',"'":'&#39;'
+ }[c]));
+}
+
 function render(){
  const mon=mondayOfWeek(weekOffset);
  const sat=new Date(mon);
  sat.setDate(mon.getDate()+5);
+
  document.getElementById('weekTitle').textContent=
  dateText(mon)+' 〜 '+dateText(sat);
 
- document.getElementById('total').textContent=names.length;
- const submitted=samples.filter(s=>s!==null).length;
- document.getElementById('done').textContent=submitted;
- document.getElementById('missing').textContent=names.length-submitted;
+ const casts=getCasts();
+ const data=getData();
+
+ document.getElementById('total').textContent=casts.length;
+
+ const entered=casts.filter(c=>getShift(c,data)!==null).length;
+ document.getElementById('done').textContent=entered;
+ document.getElementById('missing').textContent=casts.length-entered;
+
+ const castSelect=document.getElementById('cast');
+ const oldValue=castSelect.value;
+ castSelect.innerHTML='';
+
+ casts.forEach(c=>{
+  const opt=document.createElement('option');
+  opt.value=castId(c);
+  opt.textContent=c.name;
+  castSelect.appendChild(opt);
+ });
+
+ if([...castSelect.options].some(o=>o.value===oldValue)){
+  castSelect.value=oldValue;
+ }
 
  const query=document.getElementById('search').value.trim();
  let html='';
- names.forEach((name,i)=>{
-  const shift=samples[i];
+
+ casts.forEach(c=>{
+  const shift=getShift(c,data);
+  const status=getStatus(c,data);
+
   if(onlyMissing&&shift!==null)return;
-  if(!name.includes(query))return;
-  html+='<div class="row"><strong>'+name+'</strong>'+
-   '<span class="badge '+(shift?'done':'missing')+'">'+
-   (shift?'提出済み':'未提出')+'</span></div>';
+  if(!c.name.includes(query))return;
+
+  const label=status==='manual'?'管理者入力済み':
+    status==='sample'?'入力済み（デモ）':'未提出';
+
+  const badge=status==='manual'?'manual':
+    status==='sample'?'done':'missing';
+
+  html+='<div class="row"><strong>'+
+   escapeHtml(c.name)+'</strong>'+
+   '<span class="badge '+badge+'">'+label+'</span></div>';
  });
+
  document.getElementById('submissionList').innerHTML=
  html||'<p>該当するキャストがいません</p>';
 }
 
 function saveShift(){
- const i=Number(document.getElementById('cast').value);
+ const id=document.getElementById('cast').value;
  const day=Number(document.getElementById('day').value);
  const time=document.getElementById('time').value;
- if(!samples[i])samples[i]=Array(6).fill('休み');
- samples[i][day]=time;
+
+ const casts=getCasts();
+ const cast=casts.find(c=>castId(c)===id);
+ if(!cast){
+  alert('キャストを選択してください');
+  return;
+ }
+
+ const data=getData();
+ const current=getShift(cast,data);
+
+ const days=current?[...current]:Array(6).fill('休み');
+ days[day]=time;
+
+ data[id]={
+  days,
+  source:'manual',
+  updatedAt:new Date().toISOString()
+ };
+
+ saveData(data);
+
  document.getElementById('message').textContent=
- names[i]+'のシフトを修正しました（デモ）';
+ cast.name+'のシフトを修正しました（デモ）';
+
  render();
 }
 
-document.getElementById('cast').innerHTML=
- names.map((n,i)=>'<option value="'+i+'">'+n+'</option>').join('');
+window.addEventListener('storage',render);
+window.addEventListener('pageshow',render);
 render();
 </script>
 </body>
