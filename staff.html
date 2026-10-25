@@ -21,6 +21,7 @@ main{max-width:1050px;margin:auto;padding:12px}
 .row:last-child{border-bottom:0}
 .name{font-size:14px;font-weight:600}
 .sub{font-size:12px;color:#7a8494;margin-top:4px}
+.buttons{display:flex;gap:6px}
 button{border:1px solid #dce2eb;background:white;border-radius:9px;padding:10px 12px;font-size:13px;cursor:pointer}
 .primary{background:#087a4a;color:white;border:0;font-weight:bold}
 .danger{color:#d33b48}
@@ -75,33 +76,44 @@ input,select{border:1px solid #dce2eb;border-radius:9px;padding:11px;font-size:1
 <div class="section">
 <h2>管理者アカウント</h2>
 <p class="sub">今後、ログインID・パスワード・権限を設定する場所です。</p>
-<div class="row">
-<div>
-<div class="name">admin01</div>
-<div class="sub">最高管理者（サンプル）</div>
-</div>
-<span class="badge blue">最高管理者</span>
-</div>
+
 <div class="row">
 <div>
 <div class="name">manager01</div>
 <div class="sub">店長（サンプル）</div>
 </div>
-<span class="badge green">店長</span>
+<span class="badge blue">店長</span>
 </div>
+
+<div class="row">
+<div>
+<div class="name">admin01</div>
+<div class="sub">管理者（サンプル）</div>
+</div>
+<span class="badge green">管理者</span>
+</div>
+
+<div class="row">
+<div>
+<div class="name">employee01</div>
+<div class="sub">社員（サンプル）</div>
+</div>
+<span class="badge blue">社員</span>
+</div>
+
 <div class="row">
 <div>
 <div class="name">staff01</div>
-<div class="sub">一般スタッフ（サンプル）</div>
+<div class="sub">スタッフ（サンプル）</div>
 </div>
-<span class="badge gray">一般</span>
+<span class="badge gray">スタッフ</span>
 </div>
 </div>
 
 <p class="note">
 ※ 架空データを使用したデモです。<br>
-※ キャストの追加・削除はこのブラウザ内だけに保存されます。<br>
-※ 実際のLINE連携や管理者のログイン・権限設定にはまだ接続していません。
+※ キャスト名簿は同じブラウザ内のシフト一覧と連動します。<br>
+※ 実際のLINE連携やログイン・権限管理にはまだ接続していません。
 </p>
 
 </main>
@@ -125,6 +137,10 @@ const initialCasts=[
 const storageKey='virgo_demo_casts';
 let casts;
 
+function makeId(){
+ return 'cast_'+Date.now()+'_'+Math.random().toString(36).slice(2,9);
+}
+
 try{
  const saved=JSON.parse(localStorage.getItem(storageKey));
  casts=Array.isArray(saved)?saved:initialCasts.map(c=>({...c}));
@@ -132,9 +148,18 @@ try{
  casts=initialCasts.map(c=>({...c}));
 }
 
+// 既存データにも固有IDを付与
+casts=casts.map(c=>({
+ id:c.id||makeId(),
+ name:c.name,
+ status:c.status||'未連携'
+}));
+
 function save(){
  localStorage.setItem(storageKey,JSON.stringify(casts));
 }
+
+save();
 
 function render(){
  const query=document.getElementById('search').value.trim();
@@ -157,14 +182,49 @@ function render(){
   sub.textContent=cast.status;
   info.append(name,sub);
 
+  const buttons=document.createElement('div');
+  buttons.className='buttons';
+
+  const edit=document.createElement('button');
+  edit.textContent='編集';
+  edit.onclick=()=>editCast(index);
+
   const del=document.createElement('button');
   del.className='danger';
   del.textContent='削除';
   del.onclick=()=>removeCast(index);
 
-  row.append(info,del);
+  buttons.append(edit,del);
+  row.append(info,buttons);
   target.appendChild(row);
  });
+}
+
+function editCast(index){
+ const cast=casts[index];
+ const name=prompt('キャスト名を変更',cast.name);
+ if(name===null)return;
+
+ const newName=name.trim();
+ if(!newName){
+  alert('名前を入力してください');
+  return;
+ }
+
+ if(casts.some((c,i)=>i!==index&&c.name===newName)){
+  alert('同じ名前が登録されています');
+  return;
+ }
+
+ cast.name=newName;
+
+ const status=confirm(
+  'LINE連携済みにしますか？\nOK：連携済み / キャンセル：未連携'
+ );
+ cast.status=status?'連携済み':'未連携';
+
+ save();
+ render();
 }
 
 function addCast(){
@@ -181,7 +241,7 @@ function addCast(){
   return;
  }
 
- casts.push({name,status});
+ casts.push({id:makeId(),name,status});
  save();
  input.value='';
  render();
