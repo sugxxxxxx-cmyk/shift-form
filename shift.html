@@ -6,8 +6,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>週間シフト提出</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
   <style>
     * { box-sizing: border-box; }
+
     body {
       margin: 0;
       padding: 20px 14px;
@@ -15,6 +17,7 @@
       color: #222;
       font-family: -apple-system, BlinkMacSystemFont, sans-serif;
     }
+
     .card {
       max-width: 480px;
       margin: 15px auto;
@@ -22,7 +25,9 @@
       background: white;
       border-radius: 18px;
     }
+
     h2 { text-align: center; }
+
     .status {
       padding: 14px;
       background: #f1f3f6;
@@ -30,6 +35,7 @@
       text-align: center;
       margin-bottom: 16px;
     }
+
     .notice {
       padding: 13px;
       background: #eaf8ef;
@@ -39,15 +45,18 @@
       font-size: 14px;
       margin-bottom: 14px;
     }
+
     .day {
       padding: 14px 0;
       border-bottom: 1px solid #eee;
     }
+
     .day label {
       display: block;
       font-weight: bold;
       margin-bottom: 8px;
     }
+
     select {
       width: 100%;
       padding: 13px;
@@ -56,6 +65,7 @@
       border-radius: 10px;
       background: white;
     }
+
     button {
       width: 100%;
       padding: 16px;
@@ -67,7 +77,11 @@
       font-size: 17px;
       font-weight: bold;
     }
-    button:disabled { background: #ccc; }
+
+    button:disabled {
+      background: #ccc;
+    }
+
     #result {
       white-space: pre-line;
       line-height: 1.8;
@@ -75,6 +89,7 @@
     }
   </style>
 </head>
+
 <body>
   <div class="card">
     <h2>週間シフト提出</h2>
@@ -112,17 +127,18 @@
       '22:00', '22:30', '23:00'
     ];
 
-    const weekdays = ['日','月','火','水','木','金','土'];
-    const dates = [];
+    const weekdays = [
+      '日', '月', '火', '水', '木', '金', '土'
+    ];
 
+    const dates = [];
     let sending = false;
 
     function makeWeek() {
       const today = new Date();
-      const day = today.getDay();
 
       const daysUntilNextMonday =
-        (8 - day) % 7 || 7;
+        (8 - today.getDay()) % 7 || 7;
 
       const monday = new Date(
         today.getFullYear(),
@@ -140,8 +156,13 @@
         );
 
         const y = date.getFullYear();
-        const m = String(date.getMonth() + 1).padStart(2, '0');
-        const d = String(date.getDate()).padStart(2, '0');
+        const m = String(
+          date.getMonth() + 1
+        ).padStart(2, '0');
+
+        const d = String(
+          date.getDate()
+        ).padStart(2, '0');
 
         dates.push(`${y}-${m}-${d}`);
 
@@ -150,6 +171,7 @@
 
         const label = document.createElement('label');
         label.htmlFor = 'shift' + i;
+
         label.textContent =
           `${date.getMonth()+1}/${date.getDate()}（${weekdays[date.getDay()]}）`;
 
@@ -172,21 +194,14 @@
     async function start() {
       makeWeek();
 
-      if (new Date().getDay() === 0) {
-        statusEl.textContent =
-          '現在、シフトの提出はできません';
-
-        document.querySelectorAll('select')
-          .forEach(el => el.disabled = true);
-        return;
-      }
-
       try {
         await Promise.race([
           liff.init({ liffId: LIFF_ID }),
           new Promise((_, reject) =>
             setTimeout(
-              () => reject(new Error('認証タイムアウト')),
+              () => reject(
+                new Error('認証タイムアウト')
+              ),
               10000
             )
           )
@@ -214,19 +229,14 @@
     function getShifts() {
       return dates.map((date, i) => ({
         date,
-        time: document.getElementById('shift' + i).value
+        time: document.getElementById(
+          'shift' + i
+        ).value
       }));
     }
 
     submitBtn.addEventListener('click', async () => {
       if (sending) return;
-
-      if (new Date().getDay() === 0) {
-        resultEl.textContent =
-          '現在、シフトの提出はできません';
-        submitBtn.disabled = true;
-        return;
-      }
 
       const shifts = getShifts();
 
@@ -234,9 +244,12 @@
         .map(s => s.date + '：' + s.time)
         .join('\n');
 
-      if (!confirm(
-        'この内容でシフトを提出しますか？\n\n' + summary
-      )) return;
+      const confirmed = confirm(
+        'この内容でシフトを提出しますか？\n\n' +
+        summary
+      );
+
+      if (!confirmed) return;
 
       const idToken = liff.getIDToken();
 
@@ -257,7 +270,8 @@
           method: 'POST',
           mode: 'no-cors',
           headers: {
-            'Content-Type': 'text/plain;charset=UTF-8'
+            'Content-Type':
+              'text/plain;charset=UTF-8'
           },
           body: JSON.stringify({
             action: 'submitWeekShift',
@@ -268,16 +282,19 @@
 
         resultEl.textContent =
           '送信処理を実行しました。\n' +
-          '保存できたかどうかは管理者に確認してください。\n\n' +
+          '保存結果は管理者側で確認してください。\n\n' +
           summary;
 
       } catch (error) {
         resultEl.textContent =
-          '通信エラーが発生しました：' + error.message;
+          '通信エラーが発生しました：' +
+          error.message;
+
       } finally {
         sending = false;
-        submitBtn.disabled = (new Date().getDay() === 0);
-        submitBtn.textContent = 'シフトを提出する';
+        submitBtn.disabled = false;
+        submitBtn.textContent =
+          'シフトを提出する';
       }
     });
 
