@@ -25,7 +25,7 @@ main{max-width:1100px;margin:auto}
  display:flex;align-items:center;justify-content:space-between;
  background:white;padding:14px 10px;gap:8px
 }
-.week strong{font-size:17px;text-align:center}
+.week strong{font-size:17px}
 button{
  border:1px solid #dce2eb;background:white;
  border-radius:9px;padding:11px;cursor:pointer;font-size:14px
@@ -36,10 +36,27 @@ input{
  width:100%;border:1px solid #dce2eb;
  border-radius:10px;padding:13px;font-size:16px
 }
-.table-wrap{overflow-x:auto;background:white;border-top:1px solid #e5e9ef}
-table{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%}
+.stats{
+ display:grid;grid-template-columns:repeat(3,1fr);
+ gap:8px;padding:0 12px 12px
+}
+.stat{
+ background:white;border-radius:11px;
+ padding:13px 5px;text-align:center
+}
+.stat strong{display:block;font-size:23px}
+.stat small{font-size:11px;color:#667085}
+.table-wrap{
+ overflow-x:auto;background:white;
+ border-top:1px solid #e5e9ef
+}
+table{
+ border-collapse:separate;border-spacing:0;
+ width:max-content;min-width:100%
+}
 th,td{
- border-right:1px solid #e6e9ef;border-bottom:1px solid #e6e9ef;
+ border-right:1px solid #e6e9ef;
+ border-bottom:1px solid #e6e9ef;
  text-align:center;min-width:88px;height:52px;padding:0
 }
 thead th{
@@ -47,12 +64,17 @@ thead th{
  position:sticky;top:0;z-index:2
 }
 th:first-child,td:first-child{
- position:sticky;left:0;min-width:112px;max-width:112px;
- background:white;z-index:3;text-align:left;
- padding:0 10px;font-weight:600;font-size:13px
+ position:sticky;left:0;
+ min-width:112px;max-width:112px;
+ background:white;z-index:3;
+ text-align:left;padding:0 10px;
+ font-weight:600;font-size:13px
 }
 thead th:first-child{background:#edf1f7;z-index:4}
-.count{display:block;font-size:12px;color:#16804c;margin-top:5px}
+.count{
+ display:block;font-size:12px;
+ color:#16804c;margin-top:5px
+}
 .cell{
  display:flex;align-items:center;justify-content:center;
  width:calc(100% - 6px);height:43px;margin:3px;
@@ -60,7 +82,6 @@ thead th:first-child{background:#edf1f7;z-index:4}
  font-size:13px;font-weight:bold;cursor:pointer
 }
 .cell:hover{border-color:#087a4a}
-.cell:active{transform:scale(.96)}
 .work{background:#d8f8e5;color:#087a3f}
 .off{background:#f0f1f4;color:#9299a5}
 .missing{background:#ffe3e5;color:#d33b48}
@@ -90,18 +111,17 @@ thead th:first-child{background:#edf1f7;z-index:4}
 .modal h2{font-size:19px;margin:0 0 7px}
 .modal p{font-size:13px;color:#667085;margin:0 0 16px}
 .options{
- display:grid;grid-template-columns:repeat(2,1fr);
- gap:9px
+ display:grid;grid-template-columns:repeat(2,1fr);gap:9px
 }
-.options button{padding:15px 6px;font-size:15px;font-weight:bold}
+.options button{
+ padding:15px 6px;font-size:15px;font-weight:bold
+}
 .options button.selected{
  background:#087a4a;color:white;border-color:#087a4a
 }
 .options .rest{background:#f0f1f4}
 .options .none{background:#ffe3e5;color:#b42332}
-.close{
- width:100%;margin-top:14px;background:#f4f6fa
-}
+.close{width:100%;margin-top:14px;background:#f4f6fa}
 @media(max-width:600px){
  .week strong{font-size:15px}
 }
@@ -110,61 +130,80 @@ thead th:first-child{background:#edf1f7;z-index:4}
 <body>
 
 <header>
-<h1>キャストシフト</h1>
-<small>Virgo Shift Manager ・ DEMO</small>
+ <h1>キャストシフト</h1>
+ <small>Virgo Shift Manager ・ DEMO</small>
 </header>
 
 <nav>
-<a href="shift-view.html" class="active">シフト一覧</a>
-<a href="admin.html">シフト管理</a>
-<a href="staff.html">スタッフ管理</a>
+ <a href="shift-view.html" class="active">シフト一覧</a>
+ <a href="admin.html">シフト管理</a>
+ <a href="staff.html">スタッフ管理</a>
 </nav>
 
 <main>
-<div class="week">
-<button class="arrow" onclick="changeWeek(-1)">◀</button>
-<div style="text-align:center">
-<strong id="weekTitle"></strong>
-<div>
-<button onclick="goThisWeek()" style="padding:5px 12px;margin-top:5px;font-size:12px">
-今週に戻る
-</button>
-</div>
-</div>
-<button class="arrow" onclick="changeWeek(1)">▶</button>
-</div>
+ <div class="week">
+  <button class="arrow" onclick="changeWeek(-1)">◀</button>
+  <div style="text-align:center">
+   <strong id="weekTitle"></strong>
+   <div>
+    <button onclick="goThisWeek()"
+      style="padding:5px 12px;margin-top:5px;font-size:12px">
+      今週に戻る
+    </button>
+   </div>
+  </div>
+  <button class="arrow" onclick="changeWeek(1)">▶</button>
+ </div>
 
-<div class="controls">
-<input id="search" placeholder="キャスト名で検索" oninput="render()">
-</div>
+ <div class="controls">
+  <input id="search" placeholder="キャスト名で検索"
+    oninput="render()">
+ </div>
 
-<div class="table-wrap">
-<table>
-<thead id="thead"></thead>
-<tbody id="tbody"></tbody>
-</table>
-</div>
+ <div class="stats">
+  <div class="stat">
+   <strong id="totalCount">0</strong>
+   <small>キャスト総数</small>
+  </div>
+  <div class="stat">
+   <strong id="submittedCount">0</strong>
+   <small>提出済み</small>
+  </div>
+  <div class="stat">
+   <strong id="missingCount">0</strong>
+   <small>未提出・未入力</small>
+  </div>
+ </div>
 
-<div class="legend">
-<span><i style="background:#d8f8e5"></i>出勤予定</span>
-<span><i style="background:#f0f1f4"></i>休み</span>
-<span><i style="background:#ffe3e5"></i>未提出</span>
-</div>
+ <div class="table-wrap">
+  <table>
+   <thead id="thead"></thead>
+   <tbody id="tbody"></tbody>
+  </table>
+ </div>
 
-<p class="note">
-※ マスをタップするとシフトを変更できます。<br>
-※ 変更内容は同じブラウザ内のシフト管理画面にも反映されます。<br>
-※ 現在はデモです。LINE提出・ログイン権限とは未接続です。
-</p>
+ <div class="legend">
+  <span><i style="background:#d8f8e5"></i>出勤予定</span>
+  <span><i style="background:#f0f1f4"></i>休み</span>
+  <span><i style="background:#ffe3e5"></i>未提出</span>
+ </div>
+
+ <p class="note">
+  ※ マスをタップするとシフトを変更できます。<br>
+  ※ 管理者が変更したマスは、デモ提出データより優先されます。<br>
+  ※ 同じブラウザのシフト管理画面と変更内容を共有します。<br>
+  ※ 現在はデモです。実際のLINE提出データには接続していません。
+ </p>
 </main>
 
 <div class="overlay" id="overlay" onclick="closeOutside(event)">
-<div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-<h2 id="modalTitle">シフト変更</h2>
-<p id="modalInfo"></p>
-<div class="options" id="options"></div>
-<button class="close" onclick="closeModal()">キャンセル</button>
-</div>
+ <div class="modal" role="dialog" aria-modal="true"
+   aria-labelledby="modalTitle">
+  <h2 id="modalTitle">シフト変更</h2>
+  <p id="modalInfo"></p>
+  <div class="options" id="options"></div>
+  <button class="close" onclick="closeModal()">キャンセル</button>
+ </div>
 </div>
 
 <script>
@@ -214,6 +253,11 @@ function weekKey(){
  return 'virgo_demo_shifts_'+dateKey(mondayOfWeek(weekOffset));
 }
 
+// デモ提出データ専用の保存場所
+function submissionKey(){
+ return 'virgo_demo_submissions_'+dateKey(mondayOfWeek(weekOffset));
+}
+
 function dateText(d){
  return (d.getMonth()+1)+'/'+d.getDate();
 }
@@ -228,13 +272,21 @@ function goThisWeek(){
  render();
 }
 
-function getCasts(){
+function readJSON(key,fallback){
  try{
-  const saved=JSON.parse(localStorage.getItem('virgo_demo_casts'));
-  if(Array.isArray(saved))return saved;
+  const value=JSON.parse(localStorage.getItem(key));
+  if(value!==null && typeof value==='object')return value;
  }catch(e){}
+ return fallback;
+}
+
+function getCasts(){
+ const saved=readJSON('virgo_demo_casts',null);
+ if(Array.isArray(saved))return saved;
+
  return initialNames.map((name,i)=>({
-  id:'initial_'+i,name,
+  id:'initial_'+i,
+  name,
   status:i===0?'連携済み':'未連携'
  }));
 }
@@ -244,27 +296,57 @@ function castId(cast){
 }
 
 function getData(){
- try{
-  const saved=JSON.parse(localStorage.getItem(weekKey()));
-  if(saved&&typeof saved==='object')return saved;
- }catch(e){}
- return {};
+ const data=readJSON(weekKey(),{});
+ return Array.isArray(data)?{}:data;
 }
 
-function getShift(cast,data){
+function getSubmissions(){
+ const data=readJSON(submissionKey(),{});
+ return Array.isArray(data)?{}:data;
+}
+
+function normalizeDays(days){
+ if(!Array.isArray(days))return null;
+ return Array.from({length:6},(_,i)=>{
+  const value=days[i];
+  return times.includes(value)?value:'未提出';
+ });
+}
+
+// 管理者変更 > デモ提出 > サンプルの順で反映
+function getShift(cast,data,submissions){
  const id=castId(cast);
- if(Object.prototype.hasOwnProperty.call(data,id)){
-  return data[id].days;
+ const manual=data[id];
+ const submitted=submissions[id];
+
+ const sampleIndex=initialNames.indexOf(cast.name);
+ const sample=sampleIndex>=0?samples[sampleIndex]:null;
+
+ const base=
+  normalizeDays(submitted && submitted.days) ||
+  normalizeDays(sample) ||
+  Array(6).fill('未提出');
+
+ if(manual && Array.isArray(manual.days)){
+  const saved=normalizeDays(manual.days);
+
+  // 新方式：変更した曜日だけ優先
+  if(Array.isArray(manual.manualDays)){
+   return base.map((value,i)=>
+    manual.manualDays.includes(i)?saved[i]:value
+   );
+  }
+
+  // 旧方式の保存データも引き続き表示
+  return saved;
  }
- const i=initialNames.indexOf(cast.name);
- return i>=0?samples[i]:null;
+
+ return base;
 }
 
-function escapeHtml(str){
- return String(str).replace(/[&<>"']/g,c=>({
-  '&':'&amp;','<':'&lt;','>':'&gt;',
-  '"':'&quot;',"'":'&#39;'
- }[c]));
+function hasSubmission(cast,submissions){
+ const entry=submissions[castId(cast)];
+ return !!(entry && normalizeDays(entry.days));
 }
 
 function render(){
@@ -273,15 +355,25 @@ function render(){
  saturday.setDate(monday.getDate()+5);
 
  document.getElementById('weekTitle').textContent=
- dateText(monday)+' 〜 '+dateText(saturday);
+  dateText(monday)+' 〜 '+dateText(saturday);
 
  const casts=getCasts();
  const data=getData();
+ const submissions=getSubmissions();
 
  const rows=casts.map(cast=>({
   cast,
-  shift:getShift(cast,data)
+  shift:getShift(cast,data,submissions)
  }));
+
+ const submitted=casts.filter(cast=>
+  hasSubmission(cast,submissions)
+ ).length;
+
+ document.getElementById('totalCount').textContent=casts.length;
+ document.getElementById('submittedCount').textContent=submitted;
+ document.getElementById('missingCount').textContent=
+  casts.length-submitted;
 
  let head='<tr><th>キャスト</th>';
 
@@ -289,13 +381,13 @@ function render(){
   const date=new Date(monday);
   date.setDate(monday.getDate()+i);
 
-  const count=rows.filter(r=>
-   r.shift &&
-   r.shift[i] &&
-   r.shift[i]!=='休み' &&
-   r.shift[i]!=='未提出' &&
-   r.shift[i]!=='未'
-  ).length;
+  const count=rows.filter(row=>{
+   const value=row.shift[i];
+   return value &&
+    value!=='休み' &&
+    value!=='未提出' &&
+    value!=='未';
+  }).length;
 
   head+='<th>'+dateText(date)+'('+weekdays[i]+')'+
    '<span class="count">出勤 '+count+'人</span></th>';
@@ -323,8 +415,7 @@ function render(){
    const td=document.createElement('td');
    const button=document.createElement('button');
 
-   const raw=row.shift?row.shift[i]:'未提出';
-   const value=raw||'未提出';
+   const value=row.shift[i]||'未提出';
    const cls=value==='休み'?'off':
     value==='未提出'||value==='未'?'missing':'work';
 
@@ -334,6 +425,7 @@ function render(){
     'aria-label',
     row.cast.name+' '+weekdays[i]+'曜日 '+value+' 編集'
    );
+
    button.onclick=()=>openModal(castId(row.cast),i);
 
    td.appendChild(button);
@@ -354,21 +446,19 @@ function render(){
 }
 
 function openModal(id,day){
- const casts=getCasts();
- const cast=casts.find(c=>castId(c)===id);
+ const cast=getCasts().find(c=>castId(c)===id);
  if(!cast)return;
 
- const data=getData();
- const shift=getShift(cast,data);
- const current=shift?shift[day]:'未提出';
+ const shift=getShift(cast,getData(),getSubmissions());
+ const current=shift[day];
 
  editing={id,day};
 
  document.getElementById('modalTitle').textContent=
- cast.name+' のシフト変更';
+  cast.name+' のシフト変更';
 
  document.getElementById('modalInfo').textContent=
- weekdays[day]+'曜日　現在：'+(current||'未提出');
+  weekdays[day]+'曜日　現在：'+current;
 
  const options=document.getElementById('options');
  options.innerHTML='';
@@ -376,9 +466,11 @@ function openModal(id,day){
  times.forEach(time=>{
   const btn=document.createElement('button');
   btn.textContent=time;
+
   if(time===current)btn.classList.add('selected');
   if(time==='休み')btn.classList.add('rest');
   if(time==='未提出')btn.classList.add('none');
+
   btn.onclick=()=>saveShift(time);
   options.appendChild(btn);
  });
@@ -389,29 +481,50 @@ function openModal(id,day){
 function saveShift(value){
  if(!editing)return;
 
- const casts=getCasts();
- const cast=casts.find(c=>castId(c)===editing.id);
+ const cast=getCasts().find(c=>
+  castId(c)===editing.id
+ );
+
  if(!cast){
   closeModal();
   return;
  }
 
  const data=getData();
- const current=getShift(cast,data);
- const days=current?[...current]:Array(6).fill('未提出');
+ const submissions=getSubmissions();
+ const current=getShift(cast,data,submissions);
 
+ const days=[...current];
  days[editing.day]=value;
+
+ const old=data[editing.id];
+
+ // 以前の管理者入力は保護する
+ const manualDays=
+  old && Array.isArray(old.manualDays)
+   ? [...old.manualDays]
+   : old && Array.isArray(old.days)
+     ? [0,1,2,3,4,5]
+     : [];
+
+ if(!manualDays.includes(editing.day)){
+  manualDays.push(editing.day);
+ }
 
  data[editing.id]={
   days,
+  manualDays,
   source:'manual',
   updatedAt:new Date().toISOString()
  };
 
- localStorage.setItem(weekKey(),JSON.stringify(data));
-
- closeModal();
- render();
+ try{
+  localStorage.setItem(weekKey(),JSON.stringify(data));
+  closeModal();
+  render();
+ }catch(error){
+  alert('保存できませんでした：'+error.message);
+ }
 }
 
 function closeModal(){
@@ -427,9 +540,27 @@ document.addEventListener('keydown',e=>{
  if(e.key==='Escape')closeModal();
 });
 
+// 同じブラウザの別タブで変更された場合に反映
 window.addEventListener('storage',render);
 window.addEventListener('pageshow',render);
 
+// デモデータの変化を定期的に確認
+let lastSnapshot='';
+
+function refreshIfChanged(){
+ const snapshot=JSON.stringify({
+  casts:localStorage.getItem('virgo_demo_casts'),
+  shifts:localStorage.getItem(weekKey()),
+  submissions:localStorage.getItem(submissionKey())
+ });
+
+ if(snapshot!==lastSnapshot){
+  lastSnapshot=snapshot;
+  if(!editing)render();
+ }
+}
+
+setInterval(refreshIfChanged,10000);
 render();
 </script>
 </body>
