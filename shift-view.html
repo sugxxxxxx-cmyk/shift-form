@@ -82,25 +82,26 @@ thead th:first-child{background:#edf1f7;z-index:4}
 </p>
 </main>
 
+
 <script>
 const initialNames=[
- 'さくら','花子','美咲','あかり','ゆい','りな',
- 'みお','れいな','なな','ひなた','あおい','あすか'
+'さくら','花子','美咲','あかり','ゆい','りな',
+'みお','れいな','なな','ひなた','あおい','あすか'
 ];
 
 const samples=[
- ['21:00','21:00','休み','22:00','21:00','21:30'],
- ['休み','21:30','21:00','21:00','22:00','21:00'],
- ['22:00','休み','21:00','21:30','21:00','休み'],
- null,
- ['21:30','22:00','休み','21:00','21:00','21:30'],
- null,
- ['21:00','21:00','21:30','休み','22:00','21:00'],
- ['休み','22:00','21:00','21:30','21:00','22:00'],
- null,
- ['21:00','21:30','休み','21:00','21:00','21:00'],
- ['21:00','休み','22:30','21:00','21:30','休み'],
- ['22:00','21:00','21:30','休み','21:00','22:30']
+['21:00','21:00','休み','22:00','21:00','21:30'],
+['休み','21:30','21:00','21:00','22:00','21:00'],
+['22:00','休み','21:00','21:30','21:00','休み'],
+null,
+['21:30','22:00','休み','21:00','21:00','21:30'],
+null,
+['21:00','21:00','21:30','休み','22:00','21:00'],
+['休み','22:00','21:00','21:30','21:00','22:00'],
+null,
+['21:00','21:30','休み','21:00','21:00','21:00'],
+['21:00','休み','22:30','21:00','21:30','休み'],
+['22:00','21:00','21:30','休み','21:00','22:30']
 ];
 
 let weekOffset=0;
@@ -112,13 +113,27 @@ function mondayOfWeek(offset){
  d.setDate(d.getDate()-(d.getDay()+6)%7+offset*7);
  return d;
 }
+
+function dateKey(d){
+ return d.getFullYear()+'-'+
+ String(d.getMonth()+1).padStart(2,'0')+'-'+
+ String(d.getDate()).padStart(2,'0');
+}
+
+function weekKey(){
+ return 'virgo_demo_shifts_'+
+ dateKey(mondayOfWeek(weekOffset));
+}
+
 function dateText(d){
  return (d.getMonth()+1)+'/'+d.getDate();
 }
+
 function changeWeek(n){
  weekOffset+=n;
  render();
 }
+
 function goThisWeek(){
  weekOffset=0;
  render();
@@ -129,12 +144,31 @@ function getCasts(){
   const saved=JSON.parse(localStorage.getItem('virgo_demo_casts'));
   if(Array.isArray(saved))return saved;
  }catch(e){}
-
  return initialNames.map((name,i)=>({
-  id:'initial_'+i,
-  name,
+  id:'initial_'+i,name,
   status:i===0?'連携済み':'未連携'
  }));
+}
+
+function castId(cast){
+ return cast.id||'name_'+cast.name;
+}
+
+function getData(){
+ try{
+  const saved=JSON.parse(localStorage.getItem(weekKey()));
+  if(saved&&typeof saved==='object')return saved;
+ }catch(e){}
+ return {};
+}
+
+function getShift(cast,data){
+ const id=castId(cast);
+ if(Object.prototype.hasOwnProperty.call(data,id)){
+  return data[id].days;
+ }
+ const i=initialNames.indexOf(cast.name);
+ return i>=0?samples[i]:null;
 }
 
 function escapeHtml(str){
@@ -156,26 +190,27 @@ function render(){
  dateText(monday)+' 〜 '+dateText(saturday);
 
  const casts=getCasts();
+ const data=getData();
 
- // デモ用のシフトをキャスト名と紐づける
- const rows=casts.map(cast=>{
-  const originalIndex=initialNames.indexOf(cast.name);
-  return {
-   name:cast.name,
-   shift:originalIndex>=0?samples[originalIndex]:null
-  };
- });
+ const rows=casts.map(cast=>({
+  name:cast.name,
+  shift:getShift(cast,data)
+ }));
 
  let head='<tr><th>キャスト</th>';
+
  for(let i=0;i<6;i++){
   const date=new Date(monday);
   date.setDate(monday.getDate()+i);
-  const count=rows.filter(r=>r.shift&&
-    r.shift[i]!=='休み').length;
 
-  head+='<th>'+dateText(date)+'('+weekdays[i]+')'
-    +'<span class="count">出勤 '+count+'人</span></th>';
+  const count=rows.filter(r=>
+   r.shift&&r.shift[i]!=='休み'
+  ).length;
+
+  head+='<th>'+dateText(date)+'('+weekdays[i]+')'+
+   '<span class="count">出勤 '+count+'人</span></th>';
  }
+
  head+='</tr>';
  document.getElementById('thead').innerHTML=head;
 
@@ -194,8 +229,9 @@ function render(){
     value==='休み'?'off':'work';
 
    html+='<td><div class="cell '+cls+'">'+
-     escapeHtml(value)+'</div></td>';
+    escapeHtml(value)+'</div></td>';
   }
+
   html+='</tr>';
  });
 
@@ -207,5 +243,6 @@ window.addEventListener('storage',render);
 window.addEventListener('pageshow',render);
 render();
 </script>
+
 </body>
 </html>
