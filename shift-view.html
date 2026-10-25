@@ -3,42 +3,112 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>シフト一覧 | Virgo</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#f4f6fa;color:#202b3a;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+body{
+ margin:0;background:#f4f6fa;color:#202b3a;
+ font-family:-apple-system,BlinkMacSystemFont,sans-serif
+}
 header{background:#131c2d;color:white;padding:17px 16px}
 header h1{font-size:20px;margin:0}
 header small{color:#b9c5d5;font-size:11px}
 nav{display:flex;background:white;border-bottom:1px solid #e2e7ef}
-nav a{flex:1;text-align:center;text-decoration:none;color:#667085;padding:15px 4px;font-size:13px;font-weight:bold}
+nav a{
+ flex:1;text-align:center;text-decoration:none;
+ color:#667085;padding:15px 4px;font-size:13px;font-weight:bold
+}
 nav a.active{color:#087a4a;border-bottom:3px solid #087a4a}
 main{max-width:1100px;margin:auto}
-.week{display:flex;align-items:center;justify-content:space-between;background:white;padding:14px 10px;gap:8px}
+.week{
+ display:flex;align-items:center;justify-content:space-between;
+ background:white;padding:14px 10px;gap:8px
+}
 .week strong{font-size:17px;text-align:center}
-button{border:1px solid #dce2eb;background:white;border-radius:9px;padding:11px;cursor:pointer;font-size:14px}
+button{
+ border:1px solid #dce2eb;background:white;
+ border-radius:9px;padding:11px;cursor:pointer;font-size:14px
+}
 .arrow{font-size:19px;width:44px}
 .controls{display:flex;gap:8px;padding:12px}
-input{width:100%;border:1px solid #dce2eb;border-radius:10px;padding:13px;font-size:16px}
+input{
+ width:100%;border:1px solid #dce2eb;
+ border-radius:10px;padding:13px;font-size:16px
+}
 .table-wrap{overflow-x:auto;background:white;border-top:1px solid #e5e9ef}
 table{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%}
-th,td{border-right:1px solid #e6e9ef;border-bottom:1px solid #e6e9ef;text-align:center;min-width:88px;height:52px;padding:0}
-thead th{background:#edf1f7;height:62px;font-size:13px;position:sticky;top:0;z-index:2}
-th:first-child,td:first-child{position:sticky;left:0;min-width:112px;max-width:112px;background:white;z-index:3;text-align:left;padding:0 10px;font-weight:600;font-size:13px}
+th,td{
+ border-right:1px solid #e6e9ef;border-bottom:1px solid #e6e9ef;
+ text-align:center;min-width:88px;height:52px;padding:0
+}
+thead th{
+ background:#edf1f7;height:62px;font-size:13px;
+ position:sticky;top:0;z-index:2
+}
+th:first-child,td:first-child{
+ position:sticky;left:0;min-width:112px;max-width:112px;
+ background:white;z-index:3;text-align:left;
+ padding:0 10px;font-weight:600;font-size:13px
+}
 thead th:first-child{background:#edf1f7;z-index:4}
 .count{display:block;font-size:12px;color:#16804c;margin-top:5px}
-.cell{display:flex;align-items:center;justify-content:center;height:43px;margin:3px;border-radius:6px;font-size:13px;font-weight:bold}
+.cell{
+ display:flex;align-items:center;justify-content:center;
+ width:calc(100% - 6px);height:43px;margin:3px;
+ border:1px solid transparent;border-radius:6px;
+ font-size:13px;font-weight:bold;cursor:pointer
+}
+.cell:hover{border-color:#087a4a}
+.cell:active{transform:scale(.96)}
 .work{background:#d8f8e5;color:#087a3f}
 .off{background:#f0f1f4;color:#9299a5}
 .missing{background:#ffe3e5;color:#d33b48}
-.legend{display:flex;flex-wrap:wrap;gap:15px;padding:17px;font-size:12px;color:#566171}
-.legend i{display:inline-block;width:13px;height:13px;border-radius:3px;vertical-align:middle;margin-right:4px}
-.note{font-size:12px;color:#737e8e;padding:0 16px 24px;line-height:1.7}
-.today{background:#e7f1ff!important}
+.legend{
+ display:flex;flex-wrap:wrap;gap:15px;
+ padding:17px;font-size:12px;color:#566171
+}
+.legend i{
+ display:inline-block;width:13px;height:13px;
+ border-radius:3px;vertical-align:middle;margin-right:4px
+}
+.note{
+ font-size:12px;color:#737e8e;
+ padding:0 16px 24px;line-height:1.7
+}
+.overlay{
+ display:none;position:fixed;inset:0;
+ background:rgba(15,23,42,.55);z-index:100;
+ align-items:center;justify-content:center;padding:16px
+}
+.overlay.open{display:flex}
+.modal{
+ background:white;border-radius:16px;padding:20px;
+ width:100%;max-width:380px;
+ box-shadow:0 20px 60px rgba(0,0,0,.2)
+}
+.modal h2{font-size:19px;margin:0 0 7px}
+.modal p{font-size:13px;color:#667085;margin:0 0 16px}
+.options{
+ display:grid;grid-template-columns:repeat(2,1fr);
+ gap:9px
+}
+.options button{padding:15px 6px;font-size:15px;font-weight:bold}
+.options button.selected{
+ background:#087a4a;color:white;border-color:#087a4a
+}
+.options .rest{background:#f0f1f4}
+.options .none{background:#ffe3e5;color:#b42332}
+.close{
+ width:100%;margin-top:14px;background:#f4f6fa
+}
+@media(max-width:600px){
+ .week strong{font-size:15px}
+}
 </style>
 </head>
 <body>
+
 <header>
 <h1>キャストシフト</h1>
 <small>Virgo Shift Manager ・ DEMO</small>
@@ -55,7 +125,11 @@ thead th:first-child{background:#edf1f7;z-index:4}
 <button class="arrow" onclick="changeWeek(-1)">◀</button>
 <div style="text-align:center">
 <strong id="weekTitle"></strong>
-<div><button onclick="goThisWeek()" style="padding:5px 12px;margin-top:5px;font-size:12px">今週に戻る</button></div>
+<div>
+<button onclick="goThisWeek()" style="padding:5px 12px;margin-top:5px;font-size:12px">
+今週に戻る
+</button>
+</div>
 </div>
 <button class="arrow" onclick="changeWeek(1)">▶</button>
 </div>
@@ -76,36 +150,52 @@ thead th:first-child{background:#edf1f7;z-index:4}
 <span><i style="background:#f0f1f4"></i>休み</span>
 <span><i style="background:#ffe3e5"></i>未提出</span>
 </div>
+
 <p class="note">
-※ キャスト名簿はスタッフ管理画面と連動しています。<br>
-※ シフト内容はまだ架空のデモデータです。
+※ マスをタップするとシフトを変更できます。<br>
+※ 変更内容は同じブラウザ内のシフト管理画面にも反映されます。<br>
+※ 現在はデモです。LINE提出・ログイン権限とは未接続です。
 </p>
 </main>
 
+<div class="overlay" id="overlay" onclick="closeOutside(event)">
+<div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+<h2 id="modalTitle">シフト変更</h2>
+<p id="modalInfo"></p>
+<div class="options" id="options"></div>
+<button class="close" onclick="closeModal()">キャンセル</button>
+</div>
+</div>
 
 <script>
 const initialNames=[
-'さくら','花子','美咲','あかり','ゆい','りな',
-'みお','れいな','なな','ひなた','あおい','あすか'
+ 'さくら','花子','美咲','あかり','ゆい','りな',
+ 'みお','れいな','なな','ひなた','あおい','あすか'
 ];
 
 const samples=[
-['21:00','21:00','休み','22:00','21:00','21:30'],
-['休み','21:30','21:00','21:00','22:00','21:00'],
-['22:00','休み','21:00','21:30','21:00','休み'],
-null,
-['21:30','22:00','休み','21:00','21:00','21:30'],
-null,
-['21:00','21:00','21:30','休み','22:00','21:00'],
-['休み','22:00','21:00','21:30','21:00','22:00'],
-null,
-['21:00','21:30','休み','21:00','21:00','21:00'],
-['21:00','休み','22:30','21:00','21:30','休み'],
-['22:00','21:00','21:30','休み','21:00','22:30']
+ ['21:00','21:00','休み','22:00','21:00','21:30'],
+ ['休み','21:30','21:00','21:00','22:00','21:00'],
+ ['22:00','休み','21:00','21:30','21:00','休み'],
+ null,
+ ['21:30','22:00','休み','21:00','21:00','21:30'],
+ null,
+ ['21:00','21:00','21:30','休み','22:00','21:00'],
+ ['休み','22:00','21:00','21:30','21:00','22:00'],
+ null,
+ ['21:00','21:30','休み','21:00','21:00','21:00'],
+ ['21:00','休み','22:30','21:00','21:30','休み'],
+ ['22:00','21:00','21:30','休み','21:00','22:30']
+];
+
+const weekdays=['月','火','水','木','金','土'];
+const times=[
+ '21:00','21:30','22:00','22:30',
+ '23:00','休み','未提出'
 ];
 
 let weekOffset=0;
-const weekdays=['月','火','水','木','金','土'];
+let editing=null;
 
 function mondayOfWeek(offset){
  const d=new Date();
@@ -121,8 +211,7 @@ function dateKey(d){
 }
 
 function weekKey(){
- return 'virgo_demo_shifts_'+
- dateKey(mondayOfWeek(weekOffset));
+ return 'virgo_demo_shifts_'+dateKey(mondayOfWeek(weekOffset));
 }
 
 function dateText(d){
@@ -173,11 +262,8 @@ function getShift(cast,data){
 
 function escapeHtml(str){
  return String(str).replace(/[&<>"']/g,c=>({
-  '&':'&amp;',
-  '<':'&lt;',
-  '>':'&gt;',
-  '"':'&quot;',
-  "'":'&#39;'
+  '&':'&amp;','<':'&lt;','>':'&gt;',
+  '"':'&quot;',"'":'&#39;'
  }[c]));
 }
 
@@ -193,7 +279,7 @@ function render(){
  const data=getData();
 
  const rows=casts.map(cast=>({
-  name:cast.name,
+  cast,
   shift:getShift(cast,data)
  }));
 
@@ -204,7 +290,11 @@ function render(){
   date.setDate(monday.getDate()+i);
 
   const count=rows.filter(r=>
-   r.shift&&r.shift[i]!=='休み'
+   r.shift &&
+   r.shift[i] &&
+   r.shift[i]!=='休み' &&
+   r.shift[i]!=='未提出' &&
+   r.shift[i]!=='未'
   ).length;
 
   head+='<th>'+dateText(date)+'('+weekdays[i]+')'+
@@ -215,34 +305,132 @@ function render(){
  document.getElementById('thead').innerHTML=head;
 
  const query=document.getElementById('search').value.trim();
- let html='';
+ const tbody=document.getElementById('tbody');
+ tbody.innerHTML='';
+
+ let visible=0;
 
  rows.forEach(row=>{
-  if(!row.name.includes(query))return;
+  if(!row.cast.name.includes(query))return;
+  visible++;
 
-  const shift=row.shift;
-  html+='<tr><td>'+escapeHtml(row.name)+'</td>';
+  const tr=document.createElement('tr');
+  const nameCell=document.createElement('td');
+  nameCell.textContent=row.cast.name;
+  tr.appendChild(nameCell);
 
   for(let i=0;i<6;i++){
-   const value=shift?shift[i]:'未';
-   const cls=!shift?'missing':
-    value==='休み'?'off':'work';
+   const td=document.createElement('td');
+   const button=document.createElement('button');
 
-   html+='<td><div class="cell '+cls+'">'+
-    escapeHtml(value)+'</div></td>';
+   const raw=row.shift?row.shift[i]:'未提出';
+   const value=raw||'未提出';
+   const cls=value==='休み'?'off':
+    value==='未提出'||value==='未'?'missing':'work';
+
+   button.className='cell '+cls;
+   button.textContent=value==='未提出'?'未':value;
+   button.setAttribute(
+    'aria-label',
+    row.cast.name+' '+weekdays[i]+'曜日 '+value+' 編集'
+   );
+   button.onclick=()=>openModal(castId(row.cast),i);
+
+   td.appendChild(button);
+   tr.appendChild(td);
   }
 
-  html+='</tr>';
+  tbody.appendChild(tr);
  });
 
- document.getElementById('tbody').innerHTML=html||
- '<tr><td colspan="7">該当するキャストがいません</td></tr>';
+ if(!visible){
+  const tr=document.createElement('tr');
+  const td=document.createElement('td');
+  td.colSpan=7;
+  td.textContent='該当するキャストがいません';
+  tr.appendChild(td);
+  tbody.appendChild(tr);
+ }
 }
+
+function openModal(id,day){
+ const casts=getCasts();
+ const cast=casts.find(c=>castId(c)===id);
+ if(!cast)return;
+
+ const data=getData();
+ const shift=getShift(cast,data);
+ const current=shift?shift[day]:'未提出';
+
+ editing={id,day};
+
+ document.getElementById('modalTitle').textContent=
+ cast.name+' のシフト変更';
+
+ document.getElementById('modalInfo').textContent=
+ weekdays[day]+'曜日　現在：'+(current||'未提出');
+
+ const options=document.getElementById('options');
+ options.innerHTML='';
+
+ times.forEach(time=>{
+  const btn=document.createElement('button');
+  btn.textContent=time;
+  if(time===current)btn.classList.add('selected');
+  if(time==='休み')btn.classList.add('rest');
+  if(time==='未提出')btn.classList.add('none');
+  btn.onclick=()=>saveShift(time);
+  options.appendChild(btn);
+ });
+
+ document.getElementById('overlay').classList.add('open');
+}
+
+function saveShift(value){
+ if(!editing)return;
+
+ const casts=getCasts();
+ const cast=casts.find(c=>castId(c)===editing.id);
+ if(!cast){
+  closeModal();
+  return;
+ }
+
+ const data=getData();
+ const current=getShift(cast,data);
+ const days=current?[...current]:Array(6).fill('未提出');
+
+ days[editing.day]=value;
+
+ data[editing.id]={
+  days,
+  source:'manual',
+  updatedAt:new Date().toISOString()
+ };
+
+ localStorage.setItem(weekKey(),JSON.stringify(data));
+
+ closeModal();
+ render();
+}
+
+function closeModal(){
+ document.getElementById('overlay').classList.remove('open');
+ editing=null;
+}
+
+function closeOutside(event){
+ if(event.target.id==='overlay')closeModal();
+}
+
+document.addEventListener('keydown',e=>{
+ if(e.key==='Escape')closeModal();
+});
 
 window.addEventListener('storage',render);
 window.addEventListener('pageshow',render);
+
 render();
 </script>
-
 </body>
 </html>
