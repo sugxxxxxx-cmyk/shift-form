@@ -7,131 +7,60 @@
 <title>シフト一覧 | Virgo</title>
 <style>
 *{box-sizing:border-box}
-body{
- margin:0;background:#f4f6fa;color:#202b3a;
- font-family:-apple-system,BlinkMacSystemFont,sans-serif
-}
+body{margin:0;background:#f4f6fa;color:#202b3a;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
 header{background:#131c2d;color:white;padding:17px 16px}
 header h1{font-size:20px;margin:0}
 header small{color:#b9c5d5;font-size:11px}
 nav{display:flex;background:white;border-bottom:1px solid #e2e7ef}
-nav a{
- flex:1;text-align:center;text-decoration:none;
- color:#667085;padding:15px 4px;font-size:13px;font-weight:bold
-}
+nav a{flex:1;text-align:center;text-decoration:none;color:#667085;padding:15px 4px;font-size:13px;font-weight:bold}
 nav a.active{color:#087a4a;border-bottom:3px solid #087a4a}
 main{max-width:1100px;margin:auto}
-.week{
- display:flex;align-items:center;justify-content:space-between;
- background:white;padding:14px 10px;gap:8px
-}
+.week{display:flex;align-items:center;justify-content:space-between;background:white;padding:14px 10px;gap:8px}
 .week strong{font-size:17px}
-button{
- border:1px solid #dce2eb;background:white;
- border-radius:9px;padding:11px;cursor:pointer;font-size:14px
-}
+button{border:1px solid #dce2eb;background:white;border-radius:9px;padding:11px;cursor:pointer;font-size:14px}
 .arrow{font-size:19px;width:44px}
 .controls{display:flex;gap:8px;padding:12px}
-input{
- width:100%;border:1px solid #dce2eb;
- border-radius:10px;padding:13px;font-size:16px
-}
-.stats{
- display:grid;grid-template-columns:repeat(3,1fr);
- gap:8px;padding:0 12px 12px
-}
-.stat{
- background:white;border-radius:11px;
- padding:13px 5px;text-align:center
-}
+input{width:100%;border:1px solid #dce2eb;border-radius:10px;padding:13px;font-size:16px}
+.sync{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 12px 12px;font-size:12px;color:#667085}
+.sync button{padding:8px 12px;font-size:12px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 12px 12px}
+.stat{background:white;border-radius:11px;padding:13px 5px;text-align:center}
 .stat strong{display:block;font-size:23px}
 .stat small{font-size:11px;color:#667085}
-.table-wrap{
- overflow-x:auto;background:white;
- border-top:1px solid #e5e9ef
-}
-table{
- border-collapse:separate;border-spacing:0;
- width:max-content;min-width:100%
-}
-th,td{
- border-right:1px solid #e6e9ef;
- border-bottom:1px solid #e6e9ef;
- text-align:center;min-width:88px;height:52px;padding:0
-}
-thead th{
- background:#edf1f7;height:62px;font-size:13px;
- position:sticky;top:0;z-index:2
-}
-th:first-child,td:first-child{
- position:sticky;left:0;
- min-width:112px;max-width:112px;
- background:white;z-index:3;
- text-align:left;padding:0 10px;
- font-weight:600;font-size:13px
-}
+.table-wrap{overflow-x:auto;background:white;border-top:1px solid #e5e9ef}
+table{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%}
+th,td{border-right:1px solid #e6e9ef;border-bottom:1px solid #e6e9ef;text-align:center;min-width:88px;height:52px;padding:0}
+thead th{background:#edf1f7;height:62px;font-size:13px;position:sticky;top:0;z-index:2}
+th:first-child,td:first-child{position:sticky;left:0;min-width:112px;max-width:112px;background:white;z-index:3;text-align:left;padding:0 10px;font-weight:600;font-size:13px}
 thead th:first-child{background:#edf1f7;z-index:4}
-.count{
- display:block;font-size:12px;
- color:#16804c;margin-top:5px
-}
-.cell{
- display:flex;align-items:center;justify-content:center;
- width:calc(100% - 6px);height:43px;margin:3px;
- border:1px solid transparent;border-radius:6px;
- font-size:13px;font-weight:bold;cursor:pointer
-}
+.count{display:block;font-size:12px;color:#16804c;margin-top:5px}
+.cell{display:flex;align-items:center;justify-content:center;width:calc(100% - 6px);height:43px;margin:3px;border:1px solid transparent;border-radius:6px;font-size:13px;font-weight:bold;cursor:pointer}
 .cell:hover{border-color:#087a4a}
 .work{background:#d8f8e5;color:#087a3f}
 .off{background:#f0f1f4;color:#9299a5}
 .missing{background:#ffe3e5;color:#d33b48}
-.legend{
- display:flex;flex-wrap:wrap;gap:15px;
- padding:17px;font-size:12px;color:#566171
-}
-.legend i{
- display:inline-block;width:13px;height:13px;
- border-radius:3px;vertical-align:middle;margin-right:4px
-}
-.note{
- font-size:12px;color:#737e8e;
- padding:0 16px 24px;line-height:1.7
-}
-.overlay{
- display:none;position:fixed;inset:0;
- background:rgba(15,23,42,.55);z-index:100;
- align-items:center;justify-content:center;padding:16px
-}
+.legend{display:flex;flex-wrap:wrap;gap:15px;padding:17px;font-size:12px;color:#566171}
+.legend i{display:inline-block;width:13px;height:13px;border-radius:3px;vertical-align:middle;margin-right:4px}
+.note{font-size:12px;color:#737e8e;padding:0 16px 24px;line-height:1.7}
+.overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:100;align-items:center;justify-content:center;padding:16px}
 .overlay.open{display:flex}
-.modal{
- background:white;border-radius:16px;padding:20px;
- width:100%;max-width:380px;
- box-shadow:0 20px 60px rgba(0,0,0,.2)
-}
+.modal{background:white;border-radius:16px;padding:20px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.2)}
 .modal h2{font-size:19px;margin:0 0 7px}
 .modal p{font-size:13px;color:#667085;margin:0 0 16px}
-.options{
- display:grid;grid-template-columns:repeat(2,1fr);gap:9px
-}
-.options button{
- padding:15px 6px;font-size:15px;font-weight:bold
-}
-.options button.selected{
- background:#087a4a;color:white;border-color:#087a4a
-}
+.options{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
+.options button{padding:15px 6px;font-size:15px;font-weight:bold}
+.options button.selected{background:#087a4a;color:white;border-color:#087a4a}
 .options .rest{background:#f0f1f4}
 .options .none{background:#ffe3e5;color:#b42332}
 .close{width:100%;margin-top:14px;background:#f4f6fa}
-@media(max-width:600px){
- .week strong{font-size:15px}
-}
+@media(max-width:600px){.week strong{font-size:15px}}
 </style>
 </head>
 <body>
 
 <header>
  <h1>キャストシフト</h1>
- <small>Virgo Shift Manager ・ DEMO</small>
+ <small>Virgo Shift Manager ・ TEST</small>
 </header>
 
 <nav>
@@ -146,9 +75,8 @@ thead th:first-child{background:#edf1f7;z-index:4}
   <div style="text-align:center">
    <strong id="weekTitle"></strong>
    <div>
-    <button onclick="goThisWeek()"
-      style="padding:5px 12px;margin-top:5px;font-size:12px">
-      今週に戻る
+    <button onclick="goThisWeek()" style="padding:5px 12px;margin-top:5px;font-size:12px">
+     今週に戻る
     </button>
    </div>
   </div>
@@ -156,8 +84,12 @@ thead th:first-child{background:#edf1f7;z-index:4}
  </div>
 
  <div class="controls">
-  <input id="search" placeholder="キャスト名で検索"
-    oninput="render()">
+  <input id="search" placeholder="キャスト名で検索" oninput="render()">
+ </div>
+
+ <div class="sync">
+  <span id="syncStatus">スプレッドシートに接続中...</span>
+  <button onclick="loadRemote()">更新する ↻</button>
  </div>
 
  <div class="stats">
@@ -171,7 +103,7 @@ thead th:first-child{background:#edf1f7;z-index:4}
   </div>
   <div class="stat">
    <strong id="missingCount">0</strong>
-   <small>未提出・未入力</small>
+   <small>未提出</small>
   </div>
  </div>
 
@@ -189,16 +121,16 @@ thead th:first-child{background:#edf1f7;z-index:4}
  </div>
 
  <p class="note">
-  ※ マスをタップするとシフトを変更できます。<br>
-  ※ 管理者が変更したマスは、デモ提出データより優先されます。<br>
-  ※ 同じブラウザのシフト管理画面と変更内容を共有します。<br>
-  ※ 現在はデモです。実際のLINE提出データには接続していません。
+  ※ LINE提出内容はスプレッドシートから読み込みます。<br>
+  ※ 約30秒ごとに更新を確認します。<br>
+  ※ マスをタップすると、このブラウザ内でシフトを変更できます。<br>
+  ※ 管理画面での変更は、まだスプレッドシートには書き戻しません。<br>
+  ※ テスト専用です。実在するキャスト情報は登録しないでください。
  </p>
 </main>
 
 <div class="overlay" id="overlay" onclick="closeOutside(event)">
- <div class="modal" role="dialog" aria-modal="true"
-   aria-labelledby="modalTitle">
+ <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
   <h2 id="modalTitle">シフト変更</h2>
   <p id="modalInfo"></p>
   <div class="options" id="options"></div>
@@ -207,34 +139,17 @@ thead th:first-child{background:#edf1f7;z-index:4}
 </div>
 
 <script>
-const initialNames=[
- 'さくら','花子','美咲','あかり','ゆい','りな',
- 'みお','れいな','なな','ひなた','あおい','あすか'
-];
-
-const samples=[
- ['21:00','21:00','休み','22:00','21:00','21:30'],
- ['休み','21:30','21:00','21:00','22:00','21:00'],
- ['22:00','休み','21:00','21:30','21:00','休み'],
- null,
- ['21:30','22:00','休み','21:00','21:00','21:30'],
- null,
- ['21:00','21:00','21:30','休み','22:00','21:00'],
- ['休み','22:00','21:00','21:30','21:00','22:00'],
- null,
- ['21:00','21:30','休み','21:00','21:00','21:00'],
- ['21:00','休み','22:30','21:00','21:30','休み'],
- ['22:00','21:00','21:30','休み','21:00','22:30']
-];
+const API_URL =
+ 'https://script.google.com/macros/s/AKfycbzp3OJOz1hJfg-9fVt2FHGsDj1aCqGgww4mzQzgBRbulxp_kE2FQH8B-EkDK9AeyZ42/exec';
 
 const weekdays=['月','火','水','木','金','土'];
-const times=[
- '21:00','21:30','22:00','22:30',
- '23:00','休み','未提出'
-];
+const times=['21:00','21:30','22:00','22:30','23:00','休み','未提出'];
 
 let weekOffset=0;
 let editing=null;
+let remoteCasts=[];
+let loadedWeek='';
+let requestNumber=0;
 
 function mondayOfWeek(offset){
  const d=new Date();
@@ -245,17 +160,12 @@ function mondayOfWeek(offset){
 
 function dateKey(d){
  return d.getFullYear()+'-'+
- String(d.getMonth()+1).padStart(2,'0')+'-'+
- String(d.getDate()).padStart(2,'0');
+  String(d.getMonth()+1).padStart(2,'0')+'-'+
+  String(d.getDate()).padStart(2,'0');
 }
 
 function weekKey(){
  return 'virgo_demo_shifts_'+dateKey(mondayOfWeek(weekOffset));
-}
-
-// デモ提出データ専用の保存場所
-function submissionKey(){
- return 'virgo_demo_submissions_'+dateKey(mondayOfWeek(weekOffset));
 }
 
 function dateText(d){
@@ -264,130 +174,84 @@ function dateText(d){
 
 function changeWeek(n){
  weekOffset+=n;
+ remoteCasts=[];
+ loadedWeek='';
  render();
+ loadRemote();
 }
 
 function goThisWeek(){
  weekOffset=0;
+ remoteCasts=[];
+ loadedWeek='';
  render();
+ loadRemote();
 }
 
-function readJSON(key,fallback){
+function getLocalData(){
  try{
-  const value=JSON.parse(localStorage.getItem(key));
-  if(value!==null && typeof value==='object')return value;
- }catch(e){}
- return fallback;
-}
-
-function getCasts(){
- const saved=readJSON('virgo_demo_casts',null);
- if(Array.isArray(saved))return saved;
-
- return initialNames.map((name,i)=>({
-  id:'initial_'+i,
-  name,
-  status:i===0?'連携済み':'未連携'
- }));
-}
-
-function castId(cast){
- return cast.id||'name_'+cast.name;
-}
-
-function getData(){
- const data=readJSON(weekKey(),{});
- return Array.isArray(data)?{}:data;
-}
-
-function getSubmissions(){
- const data=readJSON(submissionKey(),{});
- return Array.isArray(data)?{}:data;
-}
-
-function normalizeDays(days){
- if(!Array.isArray(days))return null;
- return Array.from({length:6},(_,i)=>{
-  const value=days[i];
-  return times.includes(value)?value:'未提出';
- });
-}
-
-// 管理者変更 > デモ提出 > サンプルの順で反映
-function getShift(cast,data,submissions){
- const id=castId(cast);
- const manual=data[id];
- const submitted=submissions[id];
-
- const sampleIndex=initialNames.indexOf(cast.name);
- const sample=sampleIndex>=0?samples[sampleIndex]:null;
-
- const base=
-  normalizeDays(submitted && submitted.days) ||
-  normalizeDays(sample) ||
-  Array(6).fill('未提出');
-
- if(manual && Array.isArray(manual.days)){
-  const saved=normalizeDays(manual.days);
-
-  // 新方式：変更した曜日だけ優先
-  if(Array.isArray(manual.manualDays)){
-   return base.map((value,i)=>
-    manual.manualDays.includes(i)?saved[i]:value
-   );
+  const value=JSON.parse(localStorage.getItem(weekKey()));
+  if(value && !Array.isArray(value) && typeof value==='object'){
+   return value;
   }
+ }catch(e){}
+ return {};
+}
 
-  // 旧方式の保存データも引き続き表示
-  return saved;
- }
+function getDays(cast){
+ const base=Array.isArray(cast.days)
+  ? [...cast.days]
+  : Array(6).fill('未提出');
+
+ const local=getLocalData()[cast.id];
+
+ if(!local || !Array.isArray(local.days))return base;
+
+ const manualDays=Array.isArray(local.manualDays)
+  ? local.manualDays
+  : [0,1,2,3,4,5];
+
+ manualDays.forEach(i=>{
+  if(i>=0 && i<6 && times.includes(local.days[i])){
+   base[i]=local.days[i];
+  }
+ });
 
  return base;
-}
-
-function hasSubmission(cast,submissions){
- const entry=submissions[castId(cast)];
- return !!(entry && normalizeDays(entry.days));
 }
 
 function render(){
  const monday=mondayOfWeek(weekOffset);
  const saturday=new Date(monday);
- saturday.setDate(monday.getDate()+5);
+ saturday.setDate(saturday.getDate()+5);
 
  document.getElementById('weekTitle').textContent=
   dateText(monday)+' 〜 '+dateText(saturday);
 
- const casts=getCasts();
- const data=getData();
- const submissions=getSubmissions();
-
- const rows=casts.map(cast=>({
+ const rows=remoteCasts.map(cast=>({
   cast,
-  shift:getShift(cast,data,submissions)
+  days:getDays(cast)
  }));
 
- const submitted=casts.filter(cast=>
-  hasSubmission(cast,submissions)
- ).length;
+ const submitted=remoteCasts.filter(cast=>cast.submitted).length;
 
- document.getElementById('totalCount').textContent=casts.length;
+ document.getElementById('totalCount').textContent=remoteCasts.length;
  document.getElementById('submittedCount').textContent=submitted;
  document.getElementById('missingCount').textContent=
-  casts.length-submitted;
+  remoteCasts.length-submitted;
 
  let head='<tr><th>キャスト</th>';
 
  for(let i=0;i<6;i++){
   const date=new Date(monday);
-  date.setDate(monday.getDate()+i);
+  date.setDate(date.getDate()+i);
 
-  const count=rows.filter(row=>{
-   const value=row.shift[i];
-   return value &&
-    value!=='休み' &&
-    value!=='未提出' &&
-    value!=='未';
-  }).length;
+  const count=rows.filter(row=>
+   row.days[i] !== '休み' &&
+   row.days[i] !== '未提出' &&
+   row.days[i] !== '未' &&
+   !!row.days[i]
+  ).length;
 
   head+='<th>'+dateText(date)+'('+weekdays[i]+')'+
    '<span class="count">出勤 '+count+'人</span></th>';
@@ -403,7 +267,7 @@ function render(){
  let visible=0;
 
  rows.forEach(row=>{
-  if(!row.cast.name.includes(query))return;
+  if(!String(row.cast.name).includes(query))return;
   visible++;
 
   const tr=document.createElement('tr');
@@ -412,23 +276,23 @@ function render(){
   tr.appendChild(nameCell);
 
   for(let i=0;i<6;i++){
+   const value=row.days[i]||'未提出';
    const td=document.createElement('td');
-   const button=document.createElement('button');
+   const btn=document.createElement('button');
 
-   const value=row.shift[i]||'未提出';
-   const cls=value==='休み'?'off':
-    value==='未提出'||value==='未'?'missing':'work';
+   btn.className='cell '+(
+    value==='休み'?'off':
+    value==='未提出'||value==='未'?'missing':'work'
+   );
 
-   button.className='cell '+cls;
-   button.textContent=value==='未提出'?'未':value;
-   button.setAttribute(
+   btn.textContent=value==='未提出'?'未':value;
+   btn.setAttribute(
     'aria-label',
     row.cast.name+' '+weekdays[i]+'曜日 '+value+' 編集'
    );
+   btn.onclick=()=>openModal(row.cast.id,i);
 
-   button.onclick=()=>openModal(castId(row.cast),i);
-
-   td.appendChild(button);
+   td.appendChild(btn);
    tr.appendChild(td);
   }
 
@@ -439,19 +303,20 @@ function render(){
   const tr=document.createElement('tr');
   const td=document.createElement('td');
   td.colSpan=7;
-  td.textContent='該当するキャストがいません';
+  td.style.padding='20px';
+  td.textContent=loadedWeek
+   ? '該当するキャストがいません'
+   : 'シフトを読み込み中です';
   tr.appendChild(td);
   tbody.appendChild(tr);
  }
 }
 
 function openModal(id,day){
- const cast=getCasts().find(c=>castId(c)===id);
+ const cast=remoteCasts.find(c=>c.id===id);
  if(!cast)return;
 
- const shift=getShift(cast,getData(),getSubmissions());
- const current=shift[day];
-
+ const current=getDays(cast)[day]||'未提出';
  editing={id,day};
 
  document.getElementById('modalTitle').textContent=
@@ -481,31 +346,23 @@ function openModal(id,day){
 function saveShift(value){
  if(!editing)return;
 
- const cast=getCasts().find(c=>
-  castId(c)===editing.id
- );
-
+ const cast=remoteCasts.find(c=>c.id===editing.id);
  if(!cast){
   closeModal();
   return;
  }
 
- const data=getData();
- const submissions=getSubmissions();
- const current=getShift(cast,data,submissions);
+ const data=getLocalData();
+ const old=data[editing.id];
+ const days=getDays(cast);
 
- const days=[...current];
  days[editing.day]=value;
 
- const old=data[editing.id];
-
- // 以前の管理者入力は保護する
- const manualDays=
-  old && Array.isArray(old.manualDays)
-   ? [...old.manualDays]
-   : old && Array.isArray(old.days)
-     ? [0,1,2,3,4,5]
-     : [];
+ const manualDays=old && Array.isArray(old.manualDays)
+  ? [...old.manualDays]
+  : old && Array.isArray(old.days)
+    ? [0,1,2,3,4,5]
+    : [];
 
  if(!manualDays.includes(editing.day)){
   manualDays.push(editing.day);
@@ -536,32 +393,119 @@ function closeOutside(event){
  if(event.target.id==='overlay')closeModal();
 }
 
+function setStatus(message){
+ document.getElementById('syncStatus').textContent=message;
+}
+
+// スプレッドシートからJSONPで取得
+function loadRemote(){
+ const week=dateKey(mondayOfWeek(weekOffset));
+ const requestId=++requestNumber;
+ const callbackName='virgoDemoCallback_'+requestId+'_'+Date.now();
+
+ setStatus('スプレッドシートから読み込み中...');
+
+ const script=document.createElement('script');
+ let finished=false;
+
+ function cleanup(){
+  if(finished)return;
+  finished=true;
+  clearTimeout(timeoutId);
+  script.remove();
+  try{delete window[callbackName];}
+  catch(e){window[callbackName]=undefined;}
+ }
+
+ window[callbackName]=function(result){
+  cleanup();
+
+  // 週を切り替えた後の古い結果は無視
+  if(requestId!==requestNumber)return;
+  if(week!==dateKey(mondayOfWeek(weekOffset)))return;
+
+  if(
+   !result ||
+   result.success!==true ||
+   result.week!==week ||
+   !Array.isArray(result.casts)
+  ){
+   setStatus('取得できませんでした。更新ボタンで再試行してください');
+   return;
+  }
+
+  remoteCasts=result.casts
+   .filter(c=>
+    c &&
+    typeof c.id==='string' &&
+    typeof c.name==='string' &&
+    Array.isArray(c.days)
+   )
+   .map(c=>({
+    id:c.id,
+    name:c.name,
+    days:c.days.slice(0,6),
+    submitted:c.submitted===true
+   }));
+
+  loadedWeek=week;
+
+  const now=new Date();
+  setStatus(
+   'スプレッドシートと接続済み ・ '+
+   now.toLocaleTimeString('ja-JP',{
+    hour:'2-digit',
+    minute:'2-digit',
+    second:'2-digit'
+   })+' 更新'
+  );
+
+  render();
+ };
+
+ script.onerror=function(){
+  cleanup();
+  if(requestId===requestNumber){
+   setStatus('接続エラー。APIのURLとデプロイを確認してください');
+  }
+ };
+
+ const timeoutId=setTimeout(()=>{
+  cleanup();
+  if(requestId===requestNumber){
+   setStatus('読み込みがタイムアウトしました。再試行してください');
+  }
+ },15000);
+
+ script.src=API_URL+
+  '?action=demoShiftView'+
+  '&week='+encodeURIComponent(week)+
+  '&callback='+encodeURIComponent(callbackName)+
+  '&_='+Date.now();
+
+ document.head.appendChild(script);
+}
+
 document.addEventListener('keydown',e=>{
  if(e.key==='Escape')closeModal();
 });
 
-// 同じブラウザの別タブで変更された場合に反映
 window.addEventListener('storage',render);
-window.addEventListener('pageshow',render);
 
-// デモデータの変化を定期的に確認
-let lastSnapshot='';
+window.addEventListener('pageshow',()=>{
+ render();
+ loadRemote();
+});
 
-function refreshIfChanged(){
- const snapshot=JSON.stringify({
-  casts:localStorage.getItem('virgo_demo_casts'),
-  shifts:localStorage.getItem(weekKey()),
-  submissions:localStorage.getItem(submissionKey())
- });
-
- if(snapshot!==lastSnapshot){
-  lastSnapshot=snapshot;
-  if(!editing)render();
+// 30秒ごとにシートの更新を確認
+setInterval(()=>{
+ if(document.visibilityState==='visible'){
+  loadRemote();
  }
-}
+},30000);
 
-setInterval(refreshIfChanged,10000);
 render();
+loadRemote();
 </script>
 </body>
 </html>
