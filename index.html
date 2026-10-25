@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -63,6 +64,7 @@
       font-size: 13px;
       color: #666;
       line-height: 1.6;
+      white-space: pre-line;
     }
   </style>
 </head>
@@ -92,13 +94,14 @@
   <script>
     const LIFF_ID = '2012188437-CoSEkbeN';
 
-    // Apps ScriptのウェブアプリURL
+    // Supabase Edge Function
     const API_URL =
-      'https://script.google.com/macros/s/AKfycbzp3OJOz1hJfg-9fVt2FHGsDj1aCqGgww4mzQzgBRbulxp_kE2FQH8B-EkDK9AeyZ42/exec';
+      'https://krfzidbqoyhmkeylvneh.supabase.co/functions/v1/line-link-request';
 
     const statusEl = document.getElementById('status');
     const resultEl = document.getElementById('result');
     const submitButton = document.getElementById('submit');
+    const castNameInput = document.getElementById('castName');
 
     async function start() {
       try {
@@ -123,8 +126,7 @@
     }
 
     submitButton.addEventListener('click', async () => {
-      const castName =
-        document.getElementById('castName').value.trim();
+      const castName = castNameInput.value.trim();
 
       if (!castName) {
         resultEl.textContent = '源氏名を入力してください';
@@ -135,7 +137,7 @@
 
       if (!idToken) {
         resultEl.textContent =
-          'LINE認証情報を取得できませんでした';
+          'LINE認証情報を取得できませんでした。画面を開き直してください。';
         return;
       }
 
@@ -143,27 +145,41 @@
       resultEl.textContent = '申請を送信中...';
 
       try {
-        await fetch(API_URL, {
+        const response = await fetch(API_URL, {
           method: 'POST',
-          mode: 'no-cors',
           headers: {
-            'Content-Type': 'text/plain'
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            action: 'requestLineLink',
-            castName: castName,
-            idToken: idToken
+            castName,
+            idToken
           })
         });
 
+        const data = await response.json();
+
         resultEl.textContent =
-          '送信処理を実行しました。受付結果は管理者に確認してください。';
+          data.message ||
+          (response.ok
+            ? '申請を受け付けました'
+            : '申請に失敗しました');
+
+        if (response.ok && data.success) {
+          castNameInput.disabled = true;
+          submitButton.textContent = '申請済み';
+          return;
+        }
 
       } catch (error) {
         resultEl.textContent =
-          '送信エラー：' + error.message;
+          '通信エラーが発生しました。\n' +
+          'ネットワーク接続またはサーバー設定を確認してください。';
+        console.error(error);
+
       } finally {
-        submitButton.disabled = false;
+        if (submitButton.textContent !== '申請済み') {
+          submitButton.disabled = false;
+        }
       }
     });
 
