@@ -1,0 +1,494 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>グループLINE管理 | Virgo</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f4f6fa;color:#202b3a;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+header{background:#131c2d;color:white;padding:18px}
+header h1{font-size:20px;margin:0}
+header small{color:#b9c5d5}
+main{max-width:1000px;margin:auto;padding:14px}
+.card{background:white;border-radius:13px;padding:18px;margin-bottom:13px}
+h2{font-size:17px;margin:0 0 15px}
+button,select,input{font:inherit;border:1px solid #dce2eb;border-radius:9px;padding:11px;background:white;max-width:100%}
+button{cursor:pointer}
+button:disabled{opacity:.5;cursor:not-allowed}
+.primary{background:#087a4a;color:white;border:0;font-weight:bold}
+.danger{color:#bd293a;border-color:#e9bfc5}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #edf0f4;padding:14px 0}
+.row:last-child{border-bottom:0}
+.name{font-weight:bold}
+.sub{font-size:12px;color:#667085;margin-top:5px;overflow-wrap:anywhere}
+.good{color:#087a4a;font-weight:bold}
+.warn{color:#a26800;font-weight:bold}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:#f4f6fa;border-radius:10px;padding:12px;text-align:center}
+.stat b{display:block;font-size:25px;color:#087a4a}
+.stat span{font-size:11px;color:#667085}
+.controls{display:flex;gap:8px;flex-wrap:wrap}
+.controls input{flex:1;min-width:150px}
+select{width:100%;margin:12px 0}
+.message{white-space:pre-wrap;font-size:13px;line-height:1.8}
+.hidden{display:none!important}
+.login{max-width:440px;margin:35px auto}
+.login input{display:block;width:100%;margin:12px 0}
+.login button{width:100%}
+.empty{color:#667085;font-size:13px}
+nav{background:white;padding:13px;text-align:center}
+nav a{color:#087a4a;font-weight:bold;text-decoration:none}
+@media(max-width:600px){.stats{grid-template-columns:repeat(3,1fr)}.row{align-items:flex-start}.row button{font-size:12px}}
+</style>
+</head>
+<body>
+<header>
+<h1>グループLINE連携管理</h1>
+<small>Virgo Group LINE Manager</small>
+</header>
+<nav><a href="admin.html">← シフト管理に戻る</a></nav>
+
+<main>
+<section id="loginScreen" class="card login hidden">
+<h2>管理者ログイン</h2>
+<form id="loginForm">
+<input id="email" type="email" placeholder="メールアドレス" required autocomplete="username">
+<input id="password" type="password" placeholder="パスワード" required autocomplete="current-password">
+<button id="loginButton" class="primary">ログイン</button>
+</form>
+<p id="loginError" class="message" style="color:#bd293a"></p>
+</section>
+
+<div id="appScreen" class="hidden">
+<section class="card">
+<div class="controls" style="justify-content:space-between;align-items:center">
+<strong id="accountEmail">管理者</strong>
+<button id="refreshButton">最新情報を取得 ↻</button>
+<button id="logoutButton">ログアウト</button>
+</div>
+<p id="status" class="message"></p>
+</section>
+
+<section class="card">
+<h2>グループLINE連携状況</h2>
+<div class="stats">
+<div class="stat"><b id="linkedCount">0</b><span>連携済み</span></div>
+<div class="stat"><b id="unlinkedCount">0</b><span>未連携キャスト</span></div>
+<div class="stat"><b id="pendingCount">0</b><span>未紐づけグループ</span></div>
+</div>
+</section>
+
+<section class="card">
+<h2>未紐づけのグループLINE</h2>
+<p class="sub">グループで「グループ登録」と送ると、ここに表示されます。</p>
+<div id="pendingGroups"></div>
+</section>
+
+<section class="card">
+<h2>キャストの連携状況</h2>
+<div class="controls">
+<input id="search" placeholder="キャスト名で検索">
+<button id="onlyUnlinked">未連携のみ</button>
+</div>
+<div id="castList"></div>
+</section>
+
+<section class="card">
+<h2>新しいグループを登録する方法</h2>
+<p class="message">① キャスト専用グループLINEを作成する
+
+② ヴァルゴのLINE公式アカウントを招待する
+
+③ グループ内で「グループ登録」と送る
+
+④ この画面の「最新情報を取得」を押す
+
+⑤ グループに対応するキャストを選んで「連携する」を押す</p>
+<button id="copyRegistration">「グループ登録」をコピー</button>
+</section>
+
+<p id="actionResult" class="message" role="status"></p>
+</div>
+</main>
+
+<script type="module">
+import { createClient } from
+"https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+const SUPABASE_URL =
+"https://krfzidbqoyhmkeylvneh.supabase.co";
+
+const SUPABASE_KEY =
+"sb_publishable_4W4TXn_pvYcoLxJIwzbb2A_vRMvUbp5";
+
+const FUNCTION_URL =
+SUPABASE_URL + "/functions/v1/virgo-line-group-manage";
+
+const supabase = createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY,
+  {
+    auth: {
+      persistSession:true,
+      autoRefreshToken:true,
+      detectSessionInUrl:false
+    }
+  }
+);
+
+const $ = id => document.getElementById(id);
+
+let casts = [];
+let groups = [];
+let busy = false;
+let onlyUnlinked = false;
+
+function showLogin(message="") {
+  $("loginScreen").classList.remove("hidden");
+  $("appScreen").classList.add("hidden");
+  $("loginError").textContent = message;
+}
+
+function showApp(user) {
+  $("loginScreen").classList.add("hidden");
+  $("appScreen").classList.remove("hidden");
+  $("accountEmail").textContent =
+    user.email || "管理者";
+  loadData();
+}
+
+async function api(body) {
+  const {data:{session},error} =
+    await supabase.auth.getSession();
+
+  if (error || !session?.access_token) {
+    throw new Error("ログインし直してください");
+  }
+
+  const response = await fetch(FUNCTION_URL,{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "apikey":SUPABASE_KEY,
+      "Authorization":"Bearer "+session.access_token
+    },
+    body:JSON.stringify(body)
+  });
+
+  let result;
+
+  try {
+    result = await response.json();
+  } catch {
+    throw new Error(
+      "サーバーの応答を読み取れませんでした（HTTP "+
+      response.status+"）"
+    );
+  }
+
+  if (!response.ok || result.success !== true) {
+    throw new Error(
+      result.error ||
+      "通信エラー（HTTP "+response.status+"）"
+    );
+  }
+
+  return result;
+}
+
+function groupForCast(castId) {
+  return groups.find(g => g.cast_id === castId);
+}
+
+function render() {
+  const linked = casts.filter(c => groupForCast(c.id));
+  const pending = groups.filter(g => !g.cast_id);
+
+  $("linkedCount").textContent = linked.length;
+  $("unlinkedCount").textContent =
+    casts.length-linked.length;
+  $("pendingCount").textContent = pending.length;
+
+  renderPending(pending);
+  renderCasts();
+}
+
+function renderPending(pending) {
+  const container = $("pendingGroups");
+  container.replaceChildren();
+
+  if (!pending.length) {
+    const p = document.createElement("p");
+    p.className = "empty";
+    p.textContent = "未紐づけのグループはありません";
+    container.appendChild(p);
+    return;
+  }
+
+  for (const group of pending) {
+    const row = document.createElement("div");
+    row.className = "row";
+
+    const left = document.createElement("div");
+    left.style.flex = "1";
+
+    const name = document.createElement("div");
+    name.className = "name";
+    name.textContent =
+      group.group_name || "名前未取得のグループ";
+
+    const detail = document.createElement("div");
+    detail.className = "sub";
+    detail.textContent = "未紐づけ";
+
+    const select = document.createElement("select");
+    const first = document.createElement("option");
+    first.value = "";
+    first.textContent = "紐づけるキャストを選択";
+    select.appendChild(first);
+
+    for (const cast of casts) {
+      if (groupForCast(cast.id)) continue;
+
+      const option = document.createElement("option");
+      option.value = cast.id;
+      option.textContent = cast.name;
+      select.appendChild(option);
+    }
+
+    const button = document.createElement("button");
+    button.className = "primary";
+    button.textContent = "連携する";
+    button.disabled = busy;
+
+    button.addEventListener("click",async() => {
+      if (!select.value) {
+        alert("キャストを選択してください");
+        return;
+      }
+
+      const cast = casts.find(c => c.id === select.value);
+      if (!cast) return;
+
+      if (!confirm(
+        "【グループLINE連携確認】\n\n"+
+        "グループ："+(group.group_name || "名称未取得")+
+        "\nキャスト："+cast.name+
+        "\n\nこの組み合わせで登録しますか？"
+      )) return;
+
+      await performAction({
+        action:"link",
+        group_id:group.group_id,
+        cast_id:cast.id
+      });
+    });
+
+    left.append(name,detail,select,button);
+    row.appendChild(left);
+    container.appendChild(row);
+  }
+}
+
+function renderCasts() {
+  const container = $("castList");
+  container.replaceChildren();
+
+  const search = $("search").value.trim();
+  let count = 0;
+
+  for (const cast of casts) {
+    const group = groupForCast(cast.id);
+
+    if (!cast.name.includes(search)) continue;
+    if (onlyUnlinked && group) continue;
+
+    count++;
+
+    const row = document.createElement("div");
+    row.className = "row";
+
+    const info = document.createElement("div");
+    info.style.flex = "1";
+
+    const name = document.createElement("div");
+    name.className = "name";
+    name.textContent = cast.name;
+
+    const status = document.createElement("div");
+    status.className = "sub";
+
+    if (group) {
+      status.classList.add("good");
+      status.textContent =
+        "連携済み："+(group.group_name || "名称未取得");
+    } else {
+      status.classList.add("warn");
+      status.textContent = "グループ未連携";
+    }
+
+    info.append(name,status);
+    row.appendChild(info);
+
+    if (group) {
+      const button = document.createElement("button");
+      button.className = "danger";
+      button.textContent = "連携解除";
+      button.disabled = busy;
+
+      button.addEventListener("click",async() => {
+        if (!confirm(
+          "【連携解除の確認】\n\n"+
+          "キャスト："+cast.name+
+          "\nグループ："+(group.group_name || "名称未取得")+
+          "\n\n連携を解除しますか？"+
+          "\n※ グループ自体は削除されません。"
+        )) return;
+
+        await performAction({
+          action:"unlink",
+          group_id:group.group_id,
+          cast_id:cast.id
+        });
+      });
+
+      row.appendChild(button);
+    }
+
+    container.appendChild(row);
+  }
+
+  if (!count) {
+    const p = document.createElement("p");
+    p.className = "empty";
+    p.textContent = "該当するキャストはいません";
+    container.appendChild(p);
+  }
+}
+
+async function loadData() {
+  if (busy) return;
+
+  $("status").textContent = "読み込み中...";
+
+  try {
+    const result = await api({action:"list"});
+
+    casts = result.casts || [];
+    groups = result.groups || [];
+
+    render();
+
+    $("status").textContent =
+      "最終更新："+new Date().toLocaleTimeString("ja-JP");
+
+  } catch(error) {
+    $("status").textContent =
+      "取得エラー："+error.message;
+  }
+}
+
+async function performAction(body) {
+  if (busy) return;
+  busy = true;
+
+  $("actionResult").textContent = "処理中...";
+  $("actionResult").style.color = "#202b3a";
+
+  document.querySelectorAll(
+    "#pendingGroups button, #castList button"
+  ).forEach(b => b.disabled = true);
+
+  try {
+    const result = await api(body);
+
+    $("actionResult").textContent =
+      result.message || "処理が完了しました";
+    $("actionResult").style.color = "#087a4a";
+
+  } catch(error) {
+    $("actionResult").textContent =
+      "エラー："+error.message;
+    $("actionResult").style.color = "#bd293a";
+
+  } finally {
+    busy = false;
+    await loadData();
+  }
+}
+
+$("refreshButton").addEventListener("click",loadData);
+
+$("search").addEventListener("input",renderCasts);
+
+$("onlyUnlinked").addEventListener("click",() => {
+  onlyUnlinked = !onlyUnlinked;
+  $("onlyUnlinked").textContent =
+    onlyUnlinked ? "全員表示" : "未連携のみ";
+  renderCasts();
+});
+
+$("copyRegistration").addEventListener("click",async() => {
+  try {
+    await navigator.clipboard.writeText("グループ登録");
+    alert("コピーしました");
+  } catch {
+    alert("コピーできませんでした");
+  }
+});
+
+$("loginForm").addEventListener("submit",async e => {
+  e.preventDefault();
+
+  const button = $("loginButton");
+  button.disabled = true;
+
+  try {
+    const {data,error} =
+      await supabase.auth.signInWithPassword({
+        email:$("email").value.trim(),
+        password:$("password").value
+      });
+
+    if (error || !data.user) {
+      throw new Error("ログイン失敗");
+    }
+
+    showApp(data.user);
+
+  } catch {
+    $("loginError").textContent =
+      "メールアドレスかパスワードを確認してください";
+  } finally {
+    button.disabled = false;
+  }
+});
+
+$("logoutButton").addEventListener("click",async() => {
+  await supabase.auth.signOut();
+  casts = [];
+  groups = [];
+  showLogin();
+});
+
+async function initialize() {
+  try {
+    const {data:{session}} =
+      await supabase.auth.getSession();
+
+    if (session?.user) {
+      showApp(session.user);
+    } else {
+      showLogin();
+    }
+  } catch {
+    showLogin("ログイン状態を確認できませんでした");
+  }
+}
+
+initialize();
+</script>
+</body>
+</html>
