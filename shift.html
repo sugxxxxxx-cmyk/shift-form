@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -50,6 +51,18 @@ h2 {
   margin-bottom: 14px;
 }
 
+.saved-notice {
+  display: none;
+  padding: 13px;
+  margin-bottom: 14px;
+  background: #e8f4ff;
+  color: #165c92;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
 .day {
   padding: 14px 0;
   border-bottom: 1px solid #eee;
@@ -68,6 +81,11 @@ select {
   border: 1px solid #ddd;
   border-radius: 10px;
   background: white;
+}
+
+select:disabled {
+  background: #f1f3f6;
+  color: #777;
 }
 
 button {
@@ -119,13 +137,15 @@ button:disabled {
     翌週のシフトは水曜日までに提出をお願いします。
   </div>
 
+  <div id="savedNotice" class="saved-notice"></div>
+
   <div id="week"></div>
 
   <button id="submit" disabled>
-    シフトを提出する
+    読み込み中...
   </button>
 
-  <p id="result" role="status"></p>
+  <p id="result" role="status" aria-live="polite"></p>
 </div>
 
 <script>
@@ -144,6 +164,8 @@ const statusEl = document.getElementById("status");
 const weekEl = document.getElementById("week");
 const submitBtn = document.getElementById("submit");
 const resultEl = document.getElementById("result");
+const savedNoticeEl =
+  document.getElementById("savedNotice");
 
 const choices = [
   "休み",
@@ -159,7 +181,11 @@ const weekdays = [
 ];
 
 const dates = [];
+
 let sending = false;
+let ready = false;
+let hasSavedShifts = false;
+let loadedValues = [];
 
 function formatDate(date) {
   const y = date.getFullYear();
@@ -204,9 +230,8 @@ function makeWeek() {
 
     const select = document.createElement("select");
     select.id = "shift" + i;
+    select.disabled = true;
 
-    // 再提出時の誤上書きを防ぐため、
-    // 初期状態では時間を選択させる
     const placeholder = document.createElement("option");
     placeholder.value = "";
     placeholder.textContent = "選択してください";
@@ -223,6 +248,146 @@ function makeWeek() {
     div.appendChild(select);
     weekEl.appendChild(div);
   }
+}
+
+function setControlsEnabled(enabled) {
+  ready = enabled;
+
+  dates.forEach((_, i) => {
+    document.getElementById(
+      "shift" + i
+    ).disabled = !enabled;
+  });
+
+  submitBtn.disabled = !enabled || sending;
+
+  if (!sending) {
+    submitBtn.textContent = hasSavedShifts
+      ? "変更したシフトを再提出する"
+      : "シフトを提出する";
+  }
+}
+
+function getShifts() {
+  return dates.map((date, i) => ({
+    date,
+    time: document.getElementById(
+      "shift" + i
+    ).value
+  }));
+}
+
+function showResult(message, success) {
+  resultEl.textContent = message;
+  resultEl.className = success ? "success" : "error";
+}
+
+async function callApi(body) {
+  const controller = new AbortController();
+
+  const timeout = setTimeout(() => {
+    controller.abort();
+  }, 20000);
+
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_PUBLISHABLE_KEY
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(
+        result.message || "通信に失敗しました"
+      );
+    }
+
+    return result;
+
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function loadPreviousShifts() {
+  const idToken = liff.getIDToken();
+
+  if (!idToken) {
+    throw new Error(
+      "LINE認証情報を取得できませんでした"
+    );
+  }
+
+  statusEl.textContent =
+    "前回のシフトを読み込んでいます...";
+
+  const result = await callApi({
+    action: "load",
+    idToken,
+    week: dates[0]
+  });
+
+  const savedShifts = result.shifts;
+
+  if (!Array.isArray(savedShifts)) {
+    throw new Error(
+      "シフトの読み込み結果が不正です"
+    );
+  }
+
+  const savedMap = new Map();
+
+  for (const shift of savedShifts) {
+    if (
+      !shift ||
+      !dates.includes(shift.date) ||
+      !choices.includes(shift.time) ||
+      savedMap.has(shift.date)
+    ) {
+      throw new Error(
+        "保存済みシフトに不正なデータがあります"
+      );
+    }
+
+    savedMap.set(shift.date, shift.time);
+  }
+
+  hasSavedShifts = savedMap.size > 0;
+
+  dates.forEach((date, i) => {
+    const select = document.getElementById(
+      "shift" + i
+    );
+
+    select.value = savedMap.get(date) || "";
+  });
+
+  loadedValues = getShifts().map(s => s.time);
+
+  if (hasSavedShifts) {
+    savedNoticeEl.style.display = "block";
+
+    if (savedMap.size === 6) {
+      savedNoticeEl.textContent =
+        "前回提出したシフトを表示しています。" +
+        "変更したい日だけ修正して再提出できます。";
+    } else {
+      savedNoticeEl.textContent =
+        "保存済みのシフトを一部読み込みました。" +
+        "未入力の日を選択してから提出してください。";
+    }
+
+  } else {
+    savedNoticeEl.style.display = "none";
+  }
+
+  return result;
 }
 
 async function start() {
@@ -257,39 +422,50 @@ async function start() {
       );
     }
 
-    statusEl.textContent =
-      "LINE認証済み：" + profile.displayName;
+    const result = await loadPreviousShifts();
 
-    submitBtn.disabled = false;
+    statusEl.textContent =
+      "LINE認証済み：" + result.castName;
+
+    setControlsEnabled(true);
 
   } catch (error) {
     statusEl.textContent =
-      "認証エラー：" + error.message;
+      "読み込みエラー：" + error.message;
+
+    showResult(
+      "安全のため提出を停止しています。" +
+      "画面を開き直してください。",
+      false
+    );
+
+    setControlsEnabled(false);
   }
 }
 
-function getShifts() {
-  return dates.map((date, i) => ({
-    date,
-    time: document.getElementById(
-      "shift" + i
-    ).value
-  }));
-}
-
-function showResult(message, success) {
-  resultEl.textContent = message;
-  resultEl.className = success ? "success" : "error";
-}
-
 async function submitShifts() {
-  if (sending) return;
+  if (sending || !ready) return;
 
   const shifts = getShifts();
 
   if (shifts.some(s => !s.time)) {
     showResult(
       "月曜日から土曜日まで、6日分すべて選択してください。",
+      false
+    );
+    return;
+  }
+
+  const unchanged =
+    hasSavedShifts &&
+    shifts.every(
+      (shift, i) => shift.time === loadedValues[i]
+    );
+
+  if (unchanged) {
+    showResult(
+      "前回のシフトから変更されていません。" +
+      "変更したい日を選択してください。",
       false
     );
     return;
@@ -323,38 +499,19 @@ async function submitShifts() {
   showResult("Supabaseに保存しています...", true);
 
   try {
-    const controller = new AbortController();
+    const result = await callApi({
+      action: "save",
+      idToken,
+      shifts
+    });
 
-    const timeout = setTimeout(() => {
-      controller.abort();
-    }, 20000);
+    hasSavedShifts = true;
+    loadedValues = shifts.map(s => s.time);
 
-    let response;
-
-    try {
-      response = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "apikey": SUPABASE_PUBLISHABLE_KEY
-        },
-        body: JSON.stringify({
-          idToken,
-          shifts
-        }),
-        signal: controller.signal
-      });
-    } finally {
-      clearTimeout(timeout);
-    }
-
-    const result = await response.json();
-
-    if (!response.ok || !result.success) {
-      throw new Error(
-        result.message || "保存できませんでした"
-      );
-    }
+    savedNoticeEl.style.display = "block";
+    savedNoticeEl.textContent =
+      "保存済みのシフトを表示しています。" +
+      "変更したい日だけ修正して再提出できます。";
 
     showResult(
       "シフト提出完了！\n\n" +
@@ -373,8 +530,7 @@ async function submitShifts() {
 
   } finally {
     sending = false;
-    submitBtn.disabled = false;
-    submitBtn.textContent = "シフトを提出する";
+    setControlsEnabled(true);
   }
 }
 
