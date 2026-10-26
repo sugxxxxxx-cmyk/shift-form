@@ -848,6 +848,76 @@ showLogin("ログイン状態を確認できませんでした");
 }
 }
 
+const lineTestSection = document.createElement("div");
+lineTestSection.className = "section";
+
+lineTestSection.innerHTML = `
+  <h2>LINE通知テスト</h2>
+  <p style="font-size:13px;color:#667085">
+    自分のLINEにだけテストメッセージを送ります。
+    キャストには送信されません。
+  </p>
+  <button id="testLinePush" class="primary" type="button">
+    自分のLINEにテスト送信
+  </button>
+  <p id="testLineResult" style="font-size:13px"></p>
+`;
+
+document.querySelector("#appScreen main")
+  .prepend(lineTestSection);
+
+$("testLinePush").addEventListener("click", async () => {
+  if (!confirm("自分のLINEにテスト通知を1通送りますか？")) {
+    return;
+  }
+
+  const button = $("testLinePush");
+  const result = $("testLineResult");
+
+  button.disabled = true;
+  button.textContent = "送信中...";
+  result.textContent = "";
+
+  try {
+    const { data, error } = await supabase.auth.getSession();
+
+    if (error || !data.session?.access_token) {
+      throw new Error("管理者としてログインし直してください");
+    }
+
+    const response = await fetch(
+      SUPABASE_URL + "/functions/v1/virgo-line-test-push",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_KEY,
+          "Authorization": "Bearer " + data.session.access_token
+        },
+        body: JSON.stringify({})
+      }
+    );
+
+    const responseData = await response.json();
+
+    if (!response.ok || responseData.success !== true) {
+      throw new Error(
+        "送信エラー（HTTP " + response.status + "）"
+      );
+    }
+
+    result.style.color = "#087a4a";
+    result.textContent = "送信成功！LINEを確認してください。";
+
+  } catch (error) {
+    result.style.color = "#c72f40";
+    result.textContent = error.message;
+  } finally {
+    button.disabled = false;
+    button.textContent = "自分のLINEにテスト送信";
+  }
+});
+
 initialize();
 </script>
 </body>
