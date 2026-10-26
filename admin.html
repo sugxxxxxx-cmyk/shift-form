@@ -1,85 +1,728 @@
 
-/* =====================================
-   Virgo LINE一括送信
-   最大100人・文章自由入力
-===================================== */
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>シフト管理 | Virgo</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f4f6fa;color:#202b3a;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+header{background:#131c2d;color:#fff;padding:17px 16px}
+header h1{font-size:20px;margin:0}
+header small{font-size:11px;color:#b9c5d5}
+nav{display:flex;background:#fff;border-bottom:1px solid #e2e7ef}
+nav a{flex:1;text-align:center;text-decoration:none;color:#667085;padding:15px 4px;font-size:13px;font-weight:bold}
+nav a.active{color:#087a4a;border-bottom:3px solid #087a4a}
+main{max-width:1050px;margin:auto}
+button{background:#fff;border:1px solid #dce2eb;border-radius:9px;padding:11px;font-size:14px;cursor:pointer}
+button:disabled{opacity:.5;cursor:not-allowed}
+.week{display:flex;justify-content:space-between;align-items:center;background:#fff;padding:14px}
+.week strong{font-size:17px}
+.section{background:#fff;margin:12px;border-radius:12px;padding:16px}
+.section h2{font-size:17px;margin:0 0 12px}
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px}
+.metric{background:#fff;border-radius:12px;text-align:center;padding:15px 5px}
+.metric span{display:block;font-size:12px;color:#667085}
+.metric b{display:block;font-size:27px;margin-top:5px}
+.day-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.day-card{padding:12px 4px;text-align:center;border:1px solid #e2e7ef;border-radius:12px;background:#f7f8fa}
+.day-card.selected{border:2px solid #087a4a;background:#e8f6ee}
+.day-name{font-weight:bold}
+.day-date{font-size:11px;color:#667085;margin:5px 0}
+.day-count{font-size:25px;font-weight:bold;color:#087a4a}
+.day-other{font-size:11px;color:#667085;margin-top:5px}
+.status-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:15px 0}
+.status-tab{border:2px solid #e2e7ef;border-radius:12px;padding:13px 5px;background:#f7f8fa;font-weight:bold;font-size:13px}
+.tab-count{display:block;margin-top:5px;font-size:22px}
+.status-tab.active{border-color:#087a4a;background:#e8f6ee;color:#087a4a}
+.status-tab.missing.active{border-color:#d33b48;background:#fff0f1;color:#c72f40}
+.person-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}
+.person-item{display:flex;align-items:center;gap:10px;background:#f7f8fa;border:1px solid #e2e7ef;border-radius:10px;padding:13px;font-size:14px;overflow-wrap:anywhere;cursor:pointer}
+.person-item.selected{border-color:#087a4a;background:#e8f6ee}
+.person-item input{width:19px;height:19px;accent-color:#087a4a}
+.person-item small{display:block;color:#667085;margin-top:5px}
+.selection-controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.target-panel{background:#f0f8f4;border:1px solid #c9e9d7;border-radius:12px;padding:16px}
+.target-count{font-size:26px;font-weight:bold;color:#087a4a}
+.target-names{font-size:13px;line-height:2;overflow-wrap:anywhere;margin:10px 0}
+.primary{background:#087a4a;color:#fff;border:0;font-weight:bold;text-decoration:none;display:inline-block;padding:12px 16px;border-radius:9px;font-size:14px}
+.sync{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 12px 0;color:#667085;font-size:12px}
+.account{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;background:#eaf4ee;font-size:12px;color:#087a4a}
+.account button{padding:7px 10px;font-size:12px}
+.login-wrap{max-width:420px;margin:45px auto;padding:0 16px}
+.login-card{background:#fff;border-radius:14px;padding:25px}
+.login-card label{display:block;margin:16px 0 7px;font-size:13px;font-weight:bold}
+.login-card input{display:block;width:100%}
+input,textarea{border:1px solid #dce2eb;border-radius:8px;padding:10px;font-size:15px;max-width:100%;font-family:inherit}
+.login-card .primary{width:100%;margin-top:20px}
+.error{color:#c72f40;font-size:13px;line-height:1.6}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.controls input{flex:1;min-width:140px}
+.row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #edf0f4;gap:10px}
+.badge{border-radius:20px;padding:6px 10px;font-size:12px;font-weight:bold;white-space:nowrap}
+.done{background:#d8f8e5;color:#087a3f}
+.missing{background:#ffe3e5;color:#d33b48}
+.partial{background:#fff1d5;color:#9b6300}
+.note{font-size:12px;color:#737e8e;line-height:1.7;padding:0 16px 20px}
+.empty{font-size:13px;color:#667085;padding:12px 0}
+[hidden]{display:none!important}
+@media(min-width:700px){.person-list{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:600px){.week strong{font-size:14px}}
+</style>
+</head>
+<body>
 
-const bulkPanel = document.createElement("div");
-bulkPanel.className = "section";
+<header>
+<h1>キャストシフト管理</h1>
+<small>Virgo Shift Manager ・ SUPABASE</small>
+</header>
 
-bulkPanel.innerHTML = `
-  <h2>LINE一括送信</h2>
+<nav>
+<a href="shift-view.html">シフト一覧</a>
+<a href="admin.html" class="active">シフト管理</a>
+<a href="staff.html">スタッフ管理</a>
+</nav>
 
-  <p style="font-size:13px;color:#667085;line-height:1.7">
-    「休み」「未提出」からキャストを選択してください。<br>
-    最大100人まで一括送信できます。
-  </p>
+<section id="loginScreen" class="login-wrap" hidden>
+<div class="login-card">
+<h2>管理者ログイン</h2>
+<p>管理者アカウントでログインしてください。</p>
+<form id="loginForm">
+<label for="email">メールアドレス</label>
+<input id="email" type="email" autocomplete="username" required>
+<label for="password">パスワード</label>
+<input id="password" type="password" autocomplete="current-password" required>
+<button id="loginButton" class="primary" type="submit">ログイン</button>
+</form>
+<p id="loginError" class="error"></p>
+</div>
+</section>
 
-  <label for="bulkMessage" style="display:block;font-weight:bold;margin:12px 0">
-    送信するメッセージ
-  </label>
+<div id="appScreen" hidden>
+<div class="account">
+<span id="accountEmail">ログイン中</span>
+<button id="logoutButton">ログアウト</button>
+</div>
 
-  <textarea
-    id="bulkMessage"
-    rows="7"
-    maxlength="5000"
-    placeholder="ここにLINEで送る文章を入力してください"
-    style="width:100%;padding:12px;border:1px solid #dce2eb;border-radius:10px;font-size:15px;font-family:inherit;resize:vertical"
-  ></textarea>
+<main>
+<div class="week">
+<button id="prevWeek">◀</button>
+<div style="text-align:center">
+<strong id="weekTitle"></strong>
+<div>
+<button id="thisWeek" style="padding:5px 10px;margin-top:5px;font-size:12px">今週</button>
+</div>
+</div>
+<button id="nextWeek">▶</button>
+</div>
 
-  <p id="bulkLength" style="font-size:12px;color:#667085">
-    0 / 5000文字
-  </p>
+<div class="sync">
+<span id="syncStatus">接続中...</span>
+<button id="refreshButton">更新する ↻</button>
+</div>
 
-  <button
-    id="bulkSendButton"
-    class="primary"
-    type="button"
-    style="width:100%;margin-top:12px"
-  >
-    選択したキャストにLINE送信
-  </button>
+<div class="section">
+<h2>曜日別の出勤状況</h2>
+<div id="dayCards" class="day-grid"></div>
+<div id="dayDetails"></div>
+</div>
 
-  <p style="font-size:12px;color:#667085;line-height:1.7">
-    ※ LINE未連携のキャストは送信されません。<br>
-    ※ 送信前に宛先と文章を確認できます。<br>
-    ※ 同じLINEアカウントへの重複送信はサーバー側で除外します。
-  </p>
+<div class="section">
+<h2>LINE一括送信</h2>
+<div class="target-panel">
+<div style="font-size:13px;font-weight:bold">選択中のキャスト</div>
+<div class="target-count"><span id="targetCount">0</span>人</div>
+<div id="targetNames" class="target-names">まだ選択されていません</div>
+<button id="clearTargets" type="button">選択をすべて解除</button>
 
-  <div
-    id="bulkSendResult"
-    style="white-space:pre-wrap;font-size:13px;line-height:1.8;overflow-wrap:anywhere"
-    role="status"
-  ></div>
-`;
+<label for="bulkMessage" style="display:block;margin:18px 0 8px;font-size:13px;font-weight:bold">
+送信するLINEメッセージ
+</label>
+<textarea id="bulkMessage" rows="7" maxlength="5000"
+style="width:100%;resize:vertical"
+placeholder="ここにLINEで送る文章を入力してください"></textarea>
 
-const targetSection =
-  document.getElementById("targetCount")?.closest(".section");
+<p id="messageLength" style="font-size:12px;color:#667085">0 / 5000文字</p>
 
-if (targetSection) {
-  targetSection.after(bulkPanel);
-} else {
-  document.querySelector("#appScreen main").append(bulkPanel);
+<button id="bulkSendButton" class="primary" type="button" style="width:100%">
+選択したキャストにLINE送信
+</button>
+
+<p id="bulkSendResult" role="status"
+style="font-size:13px;white-space:pre-wrap;line-height:1.8;overflow-wrap:anywhere"></p>
+
+<p style="font-size:12px;color:#667085;line-height:1.7">
+※ 最大100人まで選択できます。<br>
+※ LINE未連携のキャストは送信対象外です。<br>
+※ 同じキャストを複数曜日で選んでも1人として数えます。<br>
+※ 送信前に宛先と文章を確認します。
+</p>
+</div>
+</div>
+
+<div class="summary">
+<div class="metric"><span>登録人数</span><b id="total">0</b></div>
+<div class="metric"><span>入力済み（6日分）</span><b id="done" style="color:#087a4a">0</b></div>
+<div class="metric"><span>未提出・未入力</span><b id="missing" style="color:#dc4450">0</b></div>
+</div>
+
+<div class="section">
+<h2>提出・入力状況</h2>
+<div class="controls">
+<input id="search" placeholder="キャスト名で検索">
+<button id="filter">未提出のみ</button>
+</div>
+<div id="submissionList">読み込み中...</div>
+</div>
+
+<div class="section">
+<h2>シフトの確認・変更</h2>
+<p style="font-size:13px;color:#667085">
+出勤時間の確認や変更は「シフト一覧」から行えます。
+</p>
+<a class="primary" href="shift-view.html">シフト一覧を開く</a>
+</div>
+
+<p class="note">
+※ 約30秒ごとにSupabaseから最新情報を取得します。<br>
+※ 未入力の日は休みではなく未提出として表示します。<br>
+※ LINE APIの受付成功は、実際の受信完了を保証するものではありません。<br>
+※ 通信エラー時は重複送信を防ぐため、送信状況を確認してから再操作してください。
+</p>
+</main>
+</div>
+
+<script type="module">
+import { createClient } from
+"https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+const SUPABASE_URL =
+"https://krfzidbqoyhmkeylvneh.supabase.co";
+
+const SUPABASE_KEY =
+"sb_publishable_4W4TXn_pvYcoLxJIwzbb2A_vRMvUbp5";
+
+const FUNCTION_URL =
+SUPABASE_URL + "/functions/v1/virgo-admin-data";
+
+const BULK_URL =
+SUPABASE_URL + "/functions/v1/virgo-line-bulk-send";
+
+const supabase = createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY,
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: false
+    }
+  }
+);
+
+const $ = id => document.getElementById(id);
+const dayNames = ["月","火","水","木","金","土"];
+
+let weekOffset = 0;
+let onlyMissing = false;
+let casts = [];
+let loadedWeek = "";
+let requestNumber = 0;
+let currentUserId = null;
+let selectedDay = 0;
+let selectedStatus = "work";
+let sending = false;
+
+const selectedTargets = new Set();
+
+function mondayOfWeek(offset = weekOffset) {
+  const d = new Date();
+  d.setHours(12,0,0,0);
+  d.setDate(d.getDate() - (d.getDay()+6)%7 + offset*7);
+  return d;
 }
 
-// 以前のテスト送信ボタンは非表示
-const oldTestButton = document.querySelector(".disabled-send");
-if (oldTestButton) {
-  oldTestButton.hidden = true;
+function dateKey(d) {
+  return d.getFullYear() + "-" +
+    String(d.getMonth()+1).padStart(2,"0") + "-" +
+    String(d.getDate()).padStart(2,"0");
 }
 
-const bulkMessage = document.getElementById("bulkMessage");
-const bulkLength = document.getElementById("bulkLength");
-const bulkButton = document.getElementById("bulkSendButton");
-const bulkResult = document.getElementById("bulkSendResult");
+function dateText(d) {
+  return (d.getMonth()+1) + "/" + d.getDate();
+}
 
-bulkMessage.addEventListener("input", () => {
-  bulkLength.textContent = bulkMessage.value.length + " / 5000文字";
+function weekKey() {
+  return dateKey(mondayOfWeek());
+}
+
+function isFilled(time) {
+  return typeof time === "string" &&
+    time !== "" &&
+    time !== "未" &&
+    time !== "未提出";
+}
+
+function isComplete(cast) {
+  return Array.isArray(cast.days) &&
+    cast.days.length === 6 &&
+    cast.days.every(isFilled);
+}
+
+function getFilledCount(cast) {
+  return Array.isArray(cast.days)
+    ? cast.days.filter(isFilled).length
+    : 0;
+}
+
+function setStatus(message) {
+  $("syncStatus").textContent = message;
+}
+
+function showLogin(message = "") {
+  requestNumber++;
+  currentUserId = null;
+  casts = [];
+  loadedWeek = "";
+  selectedTargets.clear();
+  $("appScreen").hidden = true;
+  $("loginScreen").hidden = false;
+  $("loginError").textContent = message;
+  $("password").value = "";
+}
+
+function showApp(user) {
+  currentUserId = user.id;
+  selectedTargets.clear();
+  $("accountEmail").textContent =
+    "ログイン中：" + (user.email || "管理者");
+  $("loginScreen").hidden = true;
+  $("appScreen").hidden = false;
+  render();
+  loadRemote();
+}
+
+function renderTargets() {
+  const selected = casts.filter(c => selectedTargets.has(c.id));
+  $("targetCount").textContent = selected.length;
+  $("targetNames").textContent = selected.length
+    ? selected.map(c => c.name).join("、")
+    : "まだ選択されていません";
+  $("clearTargets").disabled = sending || selected.length === 0;
+  $("bulkSendButton").disabled = sending;
+}
+
+function getDayGroups() {
+  const monday = mondayOfWeek();
+
+  return dayNames.map((name,index) => {
+    const date = new Date(monday);
+    date.setDate(date.getDate()+index);
+
+    const work = [];
+    const off = [];
+    const missing = [];
+
+    for (const cast of casts) {
+      const time = cast.days?.[index];
+
+      if (time === "休み") {
+        off.push(cast);
+      } else if (isFilled(time)) {
+        work.push({
+          id: cast.id,
+          name: cast.name,
+          time
+        });
+      } else {
+        missing.push(cast);
+      }
+    }
+
+    return {name,date,work,off,missing};
+  });
+}
+
+function renderDays() {
+  const cards = $("dayCards");
+  const details = $("dayDetails");
+
+  cards.replaceChildren();
+  details.replaceChildren();
+
+  const groups = getDayGroups();
+
+  groups.forEach((group,index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className =
+      "day-card" + (selectedDay === index ? " selected" : "");
+
+    const name = document.createElement("div");
+    name.className = "day-name";
+    name.textContent = group.name + "曜日";
+
+    const date = document.createElement("div");
+    date.className = "day-date";
+    date.textContent = dateText(group.date);
+
+    const count = document.createElement("div");
+    count.className = "day-count";
+    count.textContent = group.work.length + "人";
+
+    const other = document.createElement("div");
+    other.className = "day-other";
+    other.textContent =
+      "休み " + group.off.length +
+      " / 未 " + group.missing.length;
+
+    button.append(name,date,count,other);
+
+    button.addEventListener("click",() => {
+      if (sending) return;
+      selectedDay = index;
+      selectedStatus = "work";
+      renderDays();
+    });
+
+    cards.appendChild(button);
+  });
+
+  const group = groups[selectedDay];
+  if (!group) return;
+
+  const heading = document.createElement("h3");
+  heading.textContent =
+    group.name + "曜日（" + dateText(group.date) + "）";
+  heading.style.margin = "18px 0 10px";
+  details.appendChild(heading);
+
+  const tabs = document.createElement("div");
+  tabs.className = "status-tabs";
+
+  const statuses = [
+    {key:"work",label:"出勤",count:group.work.length},
+    {key:"off",label:"休み",count:group.off.length},
+    {key:"missing",label:"未提出",count:group.missing.length}
+  ];
+
+  statuses.forEach(status => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className =
+      "status-tab " + status.key +
+      (selectedStatus === status.key ? " active" : "");
+
+    const label = document.createElement("span");
+    label.textContent = status.label;
+
+    const count = document.createElement("span");
+    count.className = "tab-count";
+    count.textContent = status.count + "人";
+
+    button.append(label,count);
+
+    button.addEventListener("click",() => {
+      if (sending) return;
+      selectedStatus = status.key;
+      renderDays();
+    });
+
+    tabs.appendChild(button);
+  });
+
+  details.appendChild(tabs);
+
+  const people = group[selectedStatus];
+
+  if (selectedStatus !== "work") {
+    const controls = document.createElement("div");
+    controls.className = "selection-controls";
+
+    const selectAll = document.createElement("button");
+    selectAll.textContent = "表示中の全員を選択";
+    selectAll.disabled = sending;
+
+    selectAll.addEventListener("click",() => {
+      people.forEach(p => selectedTargets.add(p.id));
+      renderDays();
+      renderTargets();
+    });
+
+    const deselectAll = document.createElement("button");
+    deselectAll.textContent = "表示中の選択を解除";
+    deselectAll.disabled = sending;
+
+    deselectAll.addEventListener("click",() => {
+      people.forEach(p => selectedTargets.delete(p.id));
+      renderDays();
+      renderTargets();
+    });
+
+    controls.append(selectAll,deselectAll);
+    details.appendChild(controls);
+  }
+
+  const list = document.createElement("div");
+  list.className = "person-list";
+
+  if (people.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "empty";
+    empty.textContent = "該当するキャストはいません";
+    details.appendChild(empty);
+    return;
+  }
+
+  people.forEach(person => {
+    const item = document.createElement("label");
+    item.className = "person-item";
+
+    if (selectedStatus !== "work") {
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = selectedTargets.has(person.id);
+      checkbox.disabled = sending;
+
+      if (checkbox.checked) {
+        item.classList.add("selected");
+      }
+
+      checkbox.addEventListener("change",() => {
+        if (checkbox.checked) {
+          selectedTargets.add(person.id);
+        } else {
+          selectedTargets.delete(person.id);
+        }
+
+        item.classList.toggle("selected",checkbox.checked);
+        renderTargets();
+      });
+
+      item.appendChild(checkbox);
+    }
+
+    const info = document.createElement("div");
+    const name = document.createElement("strong");
+    name.textContent = person.name;
+    info.appendChild(name);
+
+    if (selectedStatus === "work") {
+      const time = document.createElement("small");
+      time.textContent = "出勤 " + person.time;
+      info.appendChild(time);
+    }
+
+    item.appendChild(info);
+    list.appendChild(item);
+  });
+
+  details.appendChild(list);
+}
+
+function render() {
+  const monday = mondayOfWeek();
+  const saturday = new Date(monday);
+  saturday.setDate(saturday.getDate()+5);
+
+  $("weekTitle").textContent =
+    dateText(monday) + " 〜 " + dateText(saturday);
+
+  const completed = casts.filter(isComplete).length;
+
+  $("total").textContent = casts.length;
+  $("done").textContent = completed;
+  $("missing").textContent = casts.length-completed;
+
+  renderDays();
+  renderTargets();
+
+  const query = $("search").value.trim();
+  const list = $("submissionList");
+  list.replaceChildren();
+
+  let visible = 0;
+
+  casts.forEach(cast => {
+    const complete = isComplete(cast);
+    const filled = getFilledCount(cast);
+
+    if (onlyMissing && complete) return;
+    if (!cast.name.includes(query)) return;
+
+    visible++;
+
+    const row = document.createElement("div");
+    row.className = "row";
+
+    const name = document.createElement("strong");
+    name.textContent = cast.name;
+
+    const badge = document.createElement("span");
+    badge.className = "badge " + (
+      complete ? "done" :
+      filled > 0 ? "partial" : "missing"
+    );
+
+    badge.textContent = complete
+      ? "入力済み（6/6）"
+      : filled > 0
+        ? "一部入力（" + filled + "/6）"
+        : "未提出";
+
+    row.append(name,badge);
+    list.appendChild(row);
+  });
+
+  if (!visible) {
+    const empty = document.createElement("p");
+    empty.className = "empty";
+    empty.textContent = loadedWeek
+      ? "該当するキャストがいません"
+      : "シフトを読み込み中です";
+    list.appendChild(empty);
+  }
+}
+
+function changeWeek(n) {
+  if (sending) return;
+  weekOffset += n;
+  requestNumber++;
+  casts = [];
+  loadedWeek = "";
+  selectedDay = 0;
+  selectedStatus = "work";
+  selectedTargets.clear();
+  render();
+  loadRemote();
+}
+
+function goThisWeek() {
+  if (sending) return;
+  weekOffset = 0;
+  requestNumber++;
+  casts = [];
+  loadedWeek = "";
+  selectedDay = 0;
+  selectedStatus = "work";
+  selectedTargets.clear();
+  render();
+  loadRemote();
+}
+
+async function fetchWeekData(week,token) {
+  const response = await fetch(FUNCTION_URL,{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "apikey":SUPABASE_KEY,
+      "Authorization":"Bearer "+token
+    },
+    body:JSON.stringify({week})
+  });
+
+  const result = await response.json();
+
+  if (!response.ok || result.success !== true) {
+    const error = new Error(
+      result.message || "シフトの取得に失敗しました"
+    );
+    error.status = response.status;
+    throw error;
+  }
+
+  if (result.week !== week || !Array.isArray(result.casts)) {
+    throw new Error("取得データの形式が不正です");
+  }
+
+  return result;
+}
+
+async function loadRemote() {
+  if (!currentUserId || $("appScreen").hidden || sending) return;
+
+  const week = weekKey();
+  const id = ++requestNumber;
+  const userId = currentUserId;
+
+  setStatus("Supabaseから読み込み中...");
+
+  try {
+    const {data:{session},error} =
+      await supabase.auth.getSession();
+
+    if (error || !session?.access_token) {
+      showLogin("ログインの有効期限が切れました");
+      return;
+    }
+
+    if (session.user.id !== userId) return;
+
+    const result = await fetchWeekData(
+      week,
+      session.access_token
+    );
+
+    if (
+      id !== requestNumber ||
+      week !== weekKey() ||
+      userId !== currentUserId
+    ) return;
+
+    casts = result.casts
+      .filter(c =>
+        c &&
+        typeof c.id === "string" &&
+        typeof c.name === "string" &&
+        Array.isArray(c.days)
+      )
+      .map(c => ({
+        id:c.id,
+        name:c.name,
+        days:c.days.slice(0,6),
+        submitted:c.submitted === true
+      }));
+
+    loadedWeek = week;
+
+    const validIds = new Set(casts.map(c => c.id));
+    for (const selectedId of selectedTargets) {
+      if (!validIds.has(selectedId)) {
+        selectedTargets.delete(selectedId);
+      }
+    }
+
+    setStatus(
+      "Supabaseと接続済み ・ " +
+      new Date().toLocaleTimeString("ja-JP") +
+      " 更新"
+    );
+
+    render();
+
+  } catch (error) {
+    if (id !== requestNumber) return;
+
+    setStatus("読み込みエラー：" + error.message);
+    console.error(error);
+  }
+}
+
+// LINE一括送信
+$("bulkMessage").addEventListener("input",() => {
+  $("messageLength").textContent =
+    $("bulkMessage").value.length + " / 5000文字";
 });
 
-bulkButton.addEventListener("click", async () => {
-  const selected = casts.filter(c => selectedTargets.has(c.id));
-  const message = bulkMessage.value;
+$("bulkSendButton").addEventListener("click",async() => {
+  if (sending) return;
+
+  const selected = casts.filter(c =>
+    selectedTargets.has(c.id)
+  );
+
+  const message = $("bulkMessage").value;
 
   if (selected.length === 0) {
     alert("送信するキャストを選択してください。");
@@ -87,7 +730,7 @@ bulkButton.addEventListener("click", async () => {
   }
 
   if (selected.length > 100) {
-    alert("1回の送信は100人までです。");
+    alert("1回につき100人まで選択してください。");
     return;
   }
 
@@ -101,63 +744,64 @@ bulkButton.addEventListener("click", async () => {
   const confirmation =
     "【LINE一括送信の最終確認】\n\n" +
     "選択人数：" + selected.length + "人\n" +
-    "送信先：" + names + "\n\n" +
-    "【送信する文章】\n" +
-    message + "\n\n" +
+    "宛先：" + names + "\n\n" +
+    "【送信内容】\n" + message + "\n\n" +
     "LINE連携済みのキャストに送信します。\n" +
-    "送信してよろしいですか？";
+    "よろしいですか？";
 
   if (!confirm(confirmation)) return;
 
-  bulkButton.disabled = true;
-  bulkButton.textContent = "送信中...";
-  bulkResult.style.color = "#202b3a";
-  bulkResult.textContent =
+  sending = true;
+  const button = $("bulkSendButton");
+  const resultBox = $("bulkSendResult");
+
+  button.disabled = true;
+  button.textContent = "送信中...";
+  resultBox.style.color = "#202b3a";
+  resultBox.textContent =
     "送信処理中です。完了するまで画面を閉じないでください。";
 
   try {
-    const { data, error } = await supabase.auth.getSession();
+    const {data,error} = await supabase.auth.getSession();
 
     if (error || !data.session?.access_token) {
       throw new Error("再ログインしてください。");
     }
 
-    const response = await fetch(
-      SUPABASE_URL + "/functions/v1/virgo-line-bulk-send",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "apikey": SUPABASE_KEY,
-          "Authorization": "Bearer " + data.session.access_token
-        },
-        body: JSON.stringify({
-          cast_ids: selected.map(c => c.id),
-          message: message
-        })
-      }
-    );
+    const response = await fetch(BULK_URL,{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        "apikey":SUPABASE_KEY,
+        "Authorization":"Bearer "+data.session.access_token
+      },
+      body:JSON.stringify({
+        cast_ids:selected.map(c => c.id),
+        message
+      })
+    });
 
     const result = await response.json();
 
     if (!response.ok || result.success !== true) {
       throw new Error(
-        result.message || "送信エラー（HTTP " + response.status + "）"
+        result.message ||
+        "LINE送信エラー（HTTP " + response.status + "）"
       );
     }
 
     const labels = {
-      accepted: "LINE API受付成功",
-      unlinked: "LINE未連携",
-      duplicate: "重複のため除外",
-      not_found: "対象なし",
-      failed: "送信失敗"
+      accepted:"LINE API受付成功",
+      unlinked:"LINE未連携",
+      duplicate:"重複のため除外",
+      not_found:"対象なし",
+      failed:"送信失敗"
     };
 
-    bulkResult.style.color =
+    resultBox.style.color =
       result.failed > 0 ? "#c72f40" : "#087a4a";
 
-    bulkResult.textContent =
+    resultBox.textContent =
       "【送信結果】\n\n" +
       "API受付成功：" + result.accepted + "人\n" +
       "送信対象外：" + result.skipped + "人\n" +
@@ -166,24 +810,129 @@ bulkButton.addEventListener("click", async () => {
         r.name + "：" + (labels[r.status] || r.status)
       ).join("\n");
 
-    // 受付成功したキャストだけ選択を解除
+    // API受付成功した人のみ選択解除
     for (const r of result.results || []) {
       if (r.status === "accepted") {
         selectedTargets.delete(r.id);
       }
     }
 
+  } catch (error) {
+    resultBox.style.color = "#c72f40";
+    resultBox.textContent =
+      "送信エラー：" + error.message + "\n\n" +
+      "※ 通信エラー時は、すでに送信されている可能性があります。" +
+      "確認せずに再送しないでください。";
+  } finally {
+    sending = false;
+    button.disabled = false;
+    button.textContent = "選択したキャストにLINE送信";
     renderDays();
     renderTargets();
-
-  } catch (error) {
-    bulkResult.style.color = "#c72f40";
-    bulkResult.textContent =
-      "エラー：" + error.message +
-      "\n通信エラーの場合は送信済みの可能性があるため、確認してから再送してください。";
-
-  } finally {
-    bulkButton.disabled = false;
-    bulkButton.textContent = "選択したキャストにLINE送信";
   }
 });
+
+// ログイン
+$("loginForm").addEventListener("submit",async event => {
+  event.preventDefault();
+
+  const button = $("loginButton");
+  button.disabled = true;
+  button.textContent = "ログイン中...";
+  $("loginError").textContent = "";
+
+  try {
+    const {data,error} =
+      await supabase.auth.signInWithPassword({
+        email:$("email").value.trim(),
+        password:$("password").value
+      });
+
+    if (error) throw error;
+    if (!data.user) throw new Error("ログイン失敗");
+
+    showApp(data.user);
+
+  } catch (error) {
+    $("loginError").textContent =
+      "ログインできませんでした。メールアドレスとパスワードを確認してください。";
+  } finally {
+    button.disabled = false;
+    button.textContent = "ログイン";
+  }
+});
+
+// ログアウト
+$("logoutButton").addEventListener("click",async() => {
+  if (sending) return;
+
+  const button = $("logoutButton");
+  button.disabled = true;
+
+  try {
+    const {error} = await supabase.auth.signOut();
+    if (error) throw error;
+    showLogin();
+  } catch (error) {
+    alert("ログアウトに失敗しました。");
+  } finally {
+    button.disabled = false;
+  }
+});
+
+// 各種操作
+$("prevWeek").addEventListener("click",() => changeWeek(-1));
+$("nextWeek").addEventListener("click",() => changeWeek(1));
+$("thisWeek").addEventListener("click",goThisWeek);
+$("refreshButton").addEventListener("click",loadRemote);
+
+$("filter").addEventListener("click",() => {
+  onlyMissing = !onlyMissing;
+  $("filter").textContent =
+    onlyMissing ? "全員表示" : "未提出のみ";
+  render();
+});
+
+$("search").addEventListener("input",render);
+
+$("clearTargets").addEventListener("click",() => {
+  if (sending) return;
+  selectedTargets.clear();
+  renderDays();
+  renderTargets();
+});
+
+window.addEventListener("pageshow",() => {
+  if (currentUserId) loadRemote();
+});
+
+setInterval(() => {
+  if (
+    document.visibilityState === "visible" &&
+    currentUserId &&
+    !sending
+  ) {
+    loadRemote();
+  }
+},30000);
+
+// 初期化
+async function initialize() {
+  try {
+    const {data,error} = await supabase.auth.getSession();
+    if (error) throw error;
+
+    if (data.session?.user) {
+      showApp(data.session.user);
+    } else {
+      showLogin();
+    }
+  } catch (error) {
+    showLogin("ログイン状態を確認できませんでした");
+  }
+}
+
+initialize();
+</script>
+</body>
+</html>
