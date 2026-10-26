@@ -1,304 +1,390 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>週間シフト提出</title>
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>週間シフト提出 | Virgo</title>
 
-  <style>
-    * { box-sizing: border-box; }
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
-    body {
-      margin: 0;
-      padding: 20px 14px;
-      background: #f5f6f8;
-      color: #222;
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    }
+<style>
+* {
+  box-sizing: border-box;
+}
 
-    .card {
-      max-width: 480px;
-      margin: 15px auto;
-      padding: 24px 18px;
-      background: white;
-      border-radius: 18px;
-    }
+body {
+  margin: 0;
+  padding: 20px 14px;
+  background: #f5f6f8;
+  color: #222;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+}
 
-    h2 { text-align: center; }
+.card {
+  max-width: 480px;
+  margin: 15px auto;
+  padding: 24px 18px;
+  background: white;
+  border-radius: 18px;
+}
 
-    .status {
-      padding: 14px;
-      background: #f1f3f6;
-      border-radius: 10px;
-      text-align: center;
-      margin-bottom: 16px;
-    }
+h2 {
+  text-align: center;
+}
 
-    .notice {
-      padding: 13px;
-      background: #eaf8ef;
-      color: #19653a;
-      border-radius: 10px;
-      font-weight: 600;
-      font-size: 14px;
-      margin-bottom: 14px;
-    }
+.status {
+  padding: 14px;
+  background: #f1f3f6;
+  border-radius: 10px;
+  text-align: center;
+  margin-bottom: 16px;
+}
 
-    .day {
-      padding: 14px 0;
-      border-bottom: 1px solid #eee;
-    }
+.notice {
+  padding: 13px;
+  background: #eaf8ef;
+  color: #19653a;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 14px;
+}
 
-    .day label {
-      display: block;
-      font-weight: bold;
-      margin-bottom: 8px;
-    }
+.day {
+  padding: 14px 0;
+  border-bottom: 1px solid #eee;
+}
 
-    select {
-      width: 100%;
-      padding: 13px;
-      font-size: 16px;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-      background: white;
-    }
+.day label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
 
-    button {
-      width: 100%;
-      padding: 16px;
-      margin-top: 22px;
-      background: #06c755;
-      border: 0;
-      border-radius: 10px;
-      color: white;
-      font-size: 17px;
-      font-weight: bold;
-    }
+select {
+  width: 100%;
+  padding: 13px;
+  font-size: 16px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  background: white;
+}
 
-    button:disabled {
-      background: #ccc;
-    }
+button {
+  width: 100%;
+  padding: 16px;
+  margin-top: 22px;
+  background: #06c755;
+  border: 0;
+  border-radius: 10px;
+  color: white;
+  font-size: 17px;
+  font-weight: bold;
+  cursor: pointer;
+}
 
-    #result {
-      white-space: pre-line;
-      line-height: 1.8;
-      font-size: 14px;
-    }
-  </style>
+button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+#result {
+  white-space: pre-line;
+  line-height: 1.8;
+  font-size: 14px;
+}
+
+.success {
+  color: #087a4a;
+  font-weight: bold;
+}
+
+.error {
+  color: #d33b48;
+  font-weight: bold;
+}
+</style>
 </head>
 
 <body>
-  <div class="card">
-    <h2>週間シフト提出</h2>
 
-    <div id="status" class="status">
-      LINE認証を確認中...
-    </div>
+<div class="card">
+  <h2>週間シフト提出</h2>
 
-    <div class="notice">
-      翌週のシフトは水曜日までに提出をお願いします。
-    </div>
-
-    <div id="week"></div>
-
-    <button id="submit" disabled>
-      シフトを提出する
-    </button>
-
-    <p id="result" role="status"></p>
+  <div id="status" class="status">
+    LINE認証を確認中...
   </div>
 
-  <script>
-    const LIFF_ID = '2012188437-eiZISGvR';
+  <div class="notice">
+    翌週のシフトは水曜日までに提出をお願いします。
+  </div>
 
-    const API_URL =
-      'https://script.google.com/macros/s/AKfycbzp3OJOz1hJfg-9fVt2FHGsDj1aCqGgww4mzQzgBRbulxp_kE2FQH8B-EkDK9AeyZ42/exec';
+  <div id="week"></div>
 
-    const statusEl = document.getElementById('status');
-    const weekEl = document.getElementById('week');
-    const submitBtn = document.getElementById('submit');
-    const resultEl = document.getElementById('result');
+  <button id="submit" disabled>
+    シフトを提出する
+  </button>
 
-    const choices = [
-      '休み', '21:00', '21:30',
-      '22:00', '22:30', '23:00'
-    ];
+  <p id="result" role="status"></p>
+</div>
 
-    const weekdays = [
-      '日', '月', '火', '水', '木', '金', '土'
-    ];
+<script>
+const LIFF_ID = "2012188437-eiZISGvR";
 
-    const dates = [];
-    let sending = false;
+const SUPABASE_URL =
+  "https://krfzidbqoyhmkeylvneh.supabase.co";
 
-    function makeWeek() {
-      const today = new Date();
+const SUPABASE_PUBLISHABLE_KEY =
+  "sb_publishable_4W4TXn_pvYcoLxJIwzbb2A_vRMvUbp5";
 
-      const daysUntilNextMonday =
-        (8 - today.getDay()) % 7 || 7;
+const API_URL =
+  SUPABASE_URL + "/functions/v1/virgo-line-shift";
 
-      const monday = new Date(
-        today.getFullYear(),
-        today.getMonth(),
-        today.getDate() + daysUntilNextMonday,
-        12
-      );
+const statusEl = document.getElementById("status");
+const weekEl = document.getElementById("week");
+const submitBtn = document.getElementById("submit");
+const resultEl = document.getElementById("result");
 
-      for (let i = 0; i < 6; i++) {
-        const date = new Date(
-          monday.getFullYear(),
-          monday.getMonth(),
-          monday.getDate() + i,
-          12
-        );
+const choices = [
+  "休み",
+  "21:00",
+  "21:30",
+  "22:00",
+  "22:30",
+  "23:00"
+];
 
-        const y = date.getFullYear();
-        const m = String(
-          date.getMonth() + 1
-        ).padStart(2, '0');
+const weekdays = [
+  "日", "月", "火", "水", "木", "金", "土"
+];
 
-        const d = String(
-          date.getDate()
-        ).padStart(2, '0');
+const dates = [];
+let sending = false;
 
-        dates.push(`${y}-${m}-${d}`);
+function formatDate(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
 
-        const div = document.createElement('div');
-        div.className = 'day';
+  return `${y}-${m}-${d}`;
+}
 
-        const label = document.createElement('label');
-        label.htmlFor = 'shift' + i;
+function makeWeek() {
+  const today = new Date();
 
-        label.textContent =
-          `${date.getMonth()+1}/${date.getDate()}（${weekdays[date.getDay()]}）`;
+  const daysUntilNextMonday =
+    (8 - today.getDay()) % 7 || 7;
 
-        const select = document.createElement('select');
-        select.id = 'shift' + i;
+  const monday = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate() + daysUntilNextMonday,
+    12
+  );
 
-        choices.forEach(value => {
-          const option = document.createElement('option');
-          option.value = value;
-          option.textContent = value;
-          select.appendChild(option);
-        });
+  for (let i = 0; i < 6; i++) {
+    const date = new Date(
+      monday.getFullYear(),
+      monday.getMonth(),
+      monday.getDate() + i,
+      12
+    );
 
-        div.appendChild(label);
-        div.appendChild(select);
-        weekEl.appendChild(div);
-      }
-    }
+    dates.push(formatDate(date));
 
-    async function start() {
-      makeWeek();
+    const div = document.createElement("div");
+    div.className = "day";
 
-      try {
-        await Promise.race([
-          liff.init({ liffId: LIFF_ID }),
-          new Promise((_, reject) =>
-            setTimeout(
-              () => reject(
-                new Error('認証タイムアウト')
-              ),
-              10000
-            )
-          )
-        ]);
+    const label = document.createElement("label");
+    label.htmlFor = "shift" + i;
 
-        if (!liff.isLoggedIn()) {
-          statusEl.textContent =
-            'LINEから開いてログインしてください';
-          return;
-        }
+    label.textContent =
+      `${date.getMonth() + 1}/${date.getDate()}` +
+      `（${weekdays[date.getDay()]}）`;
 
-        const profile = await liff.getProfile();
+    const select = document.createElement("select");
+    select.id = "shift" + i;
 
-        statusEl.textContent =
-          'LINE認証済み：' + profile.displayName;
+    // 再提出時の誤上書きを防ぐため、
+    // 初期状態では時間を選択させる
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "選択してください";
+    select.appendChild(placeholder);
 
-        submitBtn.disabled = false;
-
-      } catch (error) {
-        statusEl.textContent =
-          '認証エラー：' + error.message;
-      }
-    }
-
-    function getShifts() {
-      return dates.map((date, i) => ({
-        date,
-        time: document.getElementById(
-          'shift' + i
-        ).value
-      }));
-    }
-
-    submitBtn.addEventListener('click', async () => {
-      if (sending) return;
-
-      const shifts = getShifts();
-
-      const summary = shifts
-        .map(s => s.date + '：' + s.time)
-        .join('\n');
-
-      const confirmed = confirm(
-        'この内容でシフトを提出しますか？\n\n' +
-        summary
-      );
-
-      if (!confirmed) return;
-
-      const idToken = liff.getIDToken();
-
-      if (!idToken) {
-        alert(
-          'LINE認証情報を取得できませんでした。開き直してください。'
-        );
-        return;
-      }
-
-      sending = true;
-      submitBtn.disabled = true;
-      submitBtn.textContent = '送信中...';
-      resultEl.textContent = '';
-
-      try {
-        await fetch(API_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: {
-            'Content-Type':
-              'text/plain;charset=UTF-8'
-          },
-          body: JSON.stringify({
-            action: 'submitWeekShift',
-            idToken,
-            shifts
-          })
-        });
-
-        resultEl.textContent =
-          '送信処理を実行しました。\n' +
-          '保存結果は管理者側で確認してください。\n\n' +
-          summary;
-
-      } catch (error) {
-        resultEl.textContent =
-          '通信エラーが発生しました：' +
-          error.message;
-
-      } finally {
-        sending = false;
-        submitBtn.disabled = false;
-        submitBtn.textContent =
-          'シフトを提出する';
-      }
+    choices.forEach(value => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = value;
+      select.appendChild(option);
     });
 
-    start();
-  </script>
+    div.appendChild(label);
+    div.appendChild(select);
+    weekEl.appendChild(div);
+  }
+}
+
+async function start() {
+  makeWeek();
+
+  try {
+    await Promise.race([
+      liff.init({ liffId: LIFF_ID }),
+      new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error("認証タイムアウト"));
+        }, 10000);
+      })
+    ]);
+
+    if (!liff.isLoggedIn()) {
+      statusEl.textContent =
+        "LINEログインが必要です";
+
+      liff.login({
+        redirectUri: window.location.href
+      });
+
+      return;
+    }
+
+    const profile = await liff.getProfile();
+
+    if (!liff.getIDToken()) {
+      throw new Error(
+        "LINE IDトークンを取得できません"
+      );
+    }
+
+    statusEl.textContent =
+      "LINE認証済み：" + profile.displayName;
+
+    submitBtn.disabled = false;
+
+  } catch (error) {
+    statusEl.textContent =
+      "認証エラー：" + error.message;
+  }
+}
+
+function getShifts() {
+  return dates.map((date, i) => ({
+    date,
+    time: document.getElementById(
+      "shift" + i
+    ).value
+  }));
+}
+
+function showResult(message, success) {
+  resultEl.textContent = message;
+  resultEl.className = success ? "success" : "error";
+}
+
+async function submitShifts() {
+  if (sending) return;
+
+  const shifts = getShifts();
+
+  if (shifts.some(s => !s.time)) {
+    showResult(
+      "月曜日から土曜日まで、6日分すべて選択してください。",
+      false
+    );
+    return;
+  }
+
+  const summary = shifts
+    .map(s => s.date + "：" + s.time)
+    .join("\n");
+
+  if (!confirm(
+    "この内容でシフトを提出しますか？\n\n" +
+    summary
+  )) {
+    return;
+  }
+
+  const idToken = liff.getIDToken();
+
+  if (!idToken) {
+    showResult(
+      "LINE認証情報を取得できませんでした。" +
+      "画面を開き直してください。",
+      false
+    );
+    return;
+  }
+
+  sending = true;
+  submitBtn.disabled = true;
+  submitBtn.textContent = "送信中...";
+  showResult("Supabaseに保存しています...", true);
+
+  try {
+    const controller = new AbortController();
+
+    const timeout = setTimeout(() => {
+      controller.abort();
+    }, 20000);
+
+    let response;
+
+    try {
+      response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_PUBLISHABLE_KEY
+        },
+        body: JSON.stringify({
+          idToken,
+          shifts
+        }),
+        signal: controller.signal
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(
+        result.message || "保存できませんでした"
+      );
+    }
+
+    showResult(
+      "シフト提出完了！\n\n" +
+      "キャスト：" + result.castName + "\n" +
+      "6日分を保存しました。\n\n" +
+      summary,
+      true
+    );
+
+  } catch (error) {
+    showResult(
+      "シフトを保存できませんでした。\n" +
+      error.message,
+      false
+    );
+
+  } finally {
+    sending = false;
+    submitBtn.disabled = false;
+    submitBtn.textContent = "シフトを提出する";
+  }
+}
+
+submitBtn.addEventListener(
+  "click",
+  submitShifts
+);
+
+start();
+</script>
+
 </body>
 </html>
