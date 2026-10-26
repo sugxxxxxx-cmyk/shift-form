@@ -1,0 +1,172 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>グループLINE送信テスト</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f5f7fa;
+      padding: 24px;
+      max-width: 480px;
+      margin: auto;
+    }
+    .card {
+      background: white;
+      padding: 24px;
+      border-radius: 16px;
+      margin-top: 30px;
+    }
+    button {
+      width: 100%;
+      padding: 16px;
+      background: #06c755;
+      color: white;
+      border: 0;
+      border-radius: 10px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button:disabled {
+      opacity: .5;
+    }
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px;
+      margin: 8px 0 16px;
+    }
+    #result {
+      margin-top: 16px;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>グループLINE送信テスト</h2>
+    <p>送信先：すぎテスト</p>
+
+    <form id="loginForm">
+      <input id="email" type="email"
+        placeholder="管理者メールアドレス" required>
+      <input id="password" type="password"
+        placeholder="パスワード" required>
+      <button type="submit" id="loginButton">
+        管理者ログイン
+      </button>
+    </form>
+
+    <div id="sendArea" hidden>
+      <p>管理者ログイン済み</p>
+      <button id="sendButton" type="button">
+        テストグループに送信
+      </button>
+    </div>
+
+    <div id="result"></div>
+  </div>
+
+  <script type="module">
+    import { createClient }
+      from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+    const SUPABASE_URL =
+      "https://krfzidbqoyhmkeylvneh.supabase.co";
+
+    const SUPABASE_KEY =
+      "sb_publishable_4W4TXn_pvYcoLxJIwzbb2A_vRMvUbp5";
+
+    const supabase = createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
+
+    const loginForm = document.getElementById("loginForm");
+    const loginButton = document.getElementById("loginButton");
+    const sendArea = document.getElementById("sendArea");
+    const sendButton = document.getElementById("sendButton");
+    const result = document.getElementById("result");
+
+    async function updateScreen() {
+      const { data: { session } } =
+        await supabase.auth.getSession();
+
+      loginForm.hidden = !!session;
+      sendArea.hidden = !session;
+    }
+
+    loginForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      loginButton.disabled = true;
+      result.textContent = "ログイン中...";
+
+      const { error } =
+        await supabase.auth.signInWithPassword({
+          email: document.getElementById("email").value,
+          password: document.getElementById("password").value
+        });
+
+      loginButton.disabled = false;
+
+      if (error) {
+        result.textContent = "ログイン失敗：" + error.message;
+        return;
+      }
+
+      result.textContent = "ログイン成功";
+      await updateScreen();
+    });
+
+    sendButton.addEventListener("click", async () => {
+      if (!confirm("すぎテストのグループLINEに送信しますか？")) {
+        return;
+      }
+
+      sendButton.disabled = true;
+      result.textContent = "送信中...";
+
+      try {
+        const { data: { session } } =
+          await supabase.auth.getSession();
+
+        if (!session) {
+          result.textContent = "ログインしてください";
+          await updateScreen();
+          return;
+        }
+
+        const response = await fetch(
+          SUPABASE_URL + "/functions/v1/virgo-line-group-test",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "apikey": SUPABASE_KEY,
+              "Authorization": "Bearer " + session.access_token
+            },
+            body: JSON.stringify({})
+          }
+        );
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          result.textContent = "送信成功！LINEを確認してね。";
+        } else {
+          result.textContent =
+            "送信失敗：" + JSON.stringify(data);
+        }
+      } catch (error) {
+        result.textContent = "エラー：" + error.message;
+      } finally {
+        sendButton.disabled = false;
+      }
+    });
+
+    updateScreen();
+  </script>
+</body>
+</html>
