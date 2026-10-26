@@ -130,6 +130,8 @@ input,textarea{border:1px solid #dce2eb;border-radius:8px;padding:10px;font-size
 
 <div class="section">
 <h2>LINE一括送信</h2>
+<div class="controls" style="align-items:center"><label><input type="radio" name="sendMode" value="group" checked> グループLINE（メイン）</label><label><input type="radio" name="sendMode" value="individual"> 個人LINE</label></div>
+<p id="groupStatus" style="font-size:12px;color:#667085">グループ連携状況を確認中...</p>
 <div class="target-panel">
 <div style="font-size:13px;font-weight:bold">選択中のキャスト</div>
 <div class="target-count"><span id="targetCount">0</span>人</div>
@@ -146,7 +148,7 @@ placeholder="ここにLINEで送る文章を入力してください"></textarea
 <p id="messageLength" style="font-size:12px;color:#667085">0 / 5000文字</p>
 
 <button id="bulkSendButton" class="primary" type="button" style="width:100%">
-選択したキャストにLINE送信
+選択したグループLINEに送信
 </button>
 
 <p id="bulkSendResult" role="status"
@@ -154,7 +156,7 @@ style="font-size:13px;white-space:pre-wrap;line-height:1.8;overflow-wrap:anywher
 
 <p style="font-size:12px;color:#667085;line-height:1.7">
 ※ 最大100人まで選択できます。<br>
-※ LINE未連携のキャストは送信対象外です。<br>
+※ 送信モードに応じて、未連携の宛先は送信対象外です。<br>
 ※ 同じキャストを複数曜日で選んでも1人として数えます。<br>
 ※ 送信前に宛先と文章を確認します。
 </p>
@@ -206,6 +208,8 @@ const SUPABASE_KEY =
 const FUNCTION_URL =
 SUPABASE_URL + "/functions/v1/virgo-admin-data";
 
+const GROUP_BULK_URL = SUPABASE_URL + "/functions/v1/virgo-line-group-bulk-send";
+
 const BULK_URL =
 SUPABASE_URL + "/functions/v1/virgo-line-bulk-send";
 
@@ -233,6 +237,9 @@ let currentUserId = null;
 let selectedDay = 0;
 let selectedStatus = "work";
 let sending = false;
+let sendMode = "group";
+let linkedGroups = new Map();
+let groupStatusReady = false;
 
 const selectedTargets = new Set();
 
@@ -311,6 +318,8 @@ function renderTargets() {
     : "まだ選択されていません";
   $("clearTargets").disabled = sending || selected.length === 0;
   $("bulkSendButton").disabled = sending;
+  $("bulkSendButton").textContent = sending ? "送信中..." : (sendMode === "group" ? "選択したグループLINEに送信" : "選択した個人LINEに送信");
+  $("groupStatus").textContent = sendMode === "group" ? (groupStatusReady ? "グループ連携済み：" + linkedGroups.size + "人（未連携は自動除外）" : "グループ連携状況を確認中...") : "個人LINE宛てに送信します";
 }
 
 function getDayGroups() {
@@ -436,7 +445,7 @@ function renderDays() {
 
   const people = group[selectedStatus];
 
-  if (selectedStatus !== "work") {
+  if (true) {
     const controls = document.createElement("div");
     controls.className = "selection-controls";
 
@@ -479,7 +488,7 @@ function renderDays() {
     const item = document.createElement("label");
     item.className = "person-item";
 
-    if (selectedStatus !== "work") {
+    if (true) {
       const checkbox = document.createElement("input");
       checkbox.type = "checkbox";
       checkbox.checked = selectedTargets.has(person.id);
@@ -512,6 +521,18 @@ function renderDays() {
       const time = document.createElement("small");
       time.textContent = "出勤 " + person.time;
       info.appendChild(time);
+    }
+
+    if (sendMode === "group") {
+      const status = document.createElement("small");
+      status.textContent = !groupStatusReady
+        ? "連携確認中"
+        : linkedGroups.has(person.id)
+          ? "グループ連携済み"
+          : "グループ未連携";
+      status.style.color = linkedGroups.has(person.id)
+        ? "#087a4a" : "#8b5e00";
+      info.appendChild(status);
     }
 
     item.appendChild(info);
@@ -686,6 +707,8 @@ async function loadRemote() {
 
     loadedWeek = week;
 
+    if (sendMode === "group") await loadGroupStatus();
+
     const validIds = new Set(casts.map(c => c.id));
     for (const selectedId of selectedTargets) {
       if (!validIds.has(selectedId)) {
@@ -708,6 +731,69 @@ async function loadRemote() {
     console.error(error);
   }
 }
+
+// グループ連携状況の取得
+async function loadGroupStatus() {
+  groupStatusReady = false;
+
+  try {
+    const {data:{session}} =
+      await supabase.auth.getSession();
+
+    if (!session?.access_token) return;
+
+    const response = await fetch(GROUP_BULK_URL, {
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        "apikey":SUPABASE_KEY,
+        "Authorization":"Bearer " + session.access_token
+      },
+      body:JSON.stringify({action:"status"})
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || result.success !== true) {
+      throw new Error(
+        result.error || "連携状況を取得できません"
+      );
+    }
+
+    linkedGroups = new Map(
+      (result.linked || []).map(x => [
+        x.cast_id,
+        x.group_name
+      ])
+    );
+
+    groupStatusReady = true;
+
+  } catch(e) {
+    console.error(e);
+    $("groupStatus").textContent =
+      "グループ連携状況の取得に失敗しました：" +
+      e.message;
+  }
+}
+
+document.querySelectorAll(
+  'input[name="sendMode"]'
+).forEach(radio => {
+  radio.addEventListener("change",async () => {
+    if (sending) return;
+
+    sendMode = document.querySelector(
+      'input[name="sendMode"]:checked'
+    ).value;
+
+    if (sendMode === "group") {
+      await loadGroupStatus();
+    }
+
+    render();
+  });
+});
 
 // LINE一括送信
 $("bulkMessage").addEventListener("input",() => {
@@ -739,19 +825,38 @@ $("bulkSendButton").addEventListener("click",async() => {
     return;
   }
 
-  const names = selected.map(c => c.name).join("、");
+  if (sendMode === "group" && !groupStatusReady) {
+    alert(
+      "グループ連携状況を取得できていません。" +
+      "更新してから試してください。"
+    );
+    return;
+  }
+
+  const names = selected.map(c =>
+    c.name + (
+      sendMode === "group" && !linkedGroups.has(c.id)
+        ? "（未連携）" : ""
+    )
+  ).join("、");
 
   const confirmation =
     "【LINE一括送信の最終確認】\n\n" +
     "選択人数：" + selected.length + "人\n" +
     "宛先：" + names + "\n\n" +
     "【送信内容】\n" + message + "\n\n" +
-    "LINE連携済みのキャストに送信します。\n" +
+    "送信先：" + (
+      sendMode === "group"
+        ? "各キャスト専用グループLINE"
+        : "個人LINE"
+    ) + "\n" +
+    "未連携の宛先は除外します。\n" +
     "よろしいですか？";
 
   if (!confirm(confirmation)) return;
 
   sending = true;
+
   const button = $("bulkSendButton");
   const resultBox = $("bulkSendResult");
 
@@ -759,34 +864,43 @@ $("bulkSendButton").addEventListener("click",async() => {
   button.textContent = "送信中...";
   resultBox.style.color = "#202b3a";
   resultBox.textContent =
-    "送信処理中です。完了するまで画面を閉じないでください。";
+    "送信処理中です。" +
+    "完了するまで画面を閉じないでください。";
 
   try {
-    const {data,error} = await supabase.auth.getSession();
+    const {data,error} =
+      await supabase.auth.getSession();
 
     if (error || !data.session?.access_token) {
       throw new Error("再ログインしてください。");
     }
 
-    const response = await fetch(BULK_URL,{
-      method:"POST",
-      headers:{
-        "Content-Type":"application/json",
-        "apikey":SUPABASE_KEY,
-        "Authorization":"Bearer "+data.session.access_token
-      },
-      body:JSON.stringify({
-        cast_ids:selected.map(c => c.id),
-        message
-      })
-    });
+    const response = await fetch(
+      sendMode === "group" ? GROUP_BULK_URL : BULK_URL,
+      {
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json",
+          "apikey":SUPABASE_KEY,
+          "Authorization":
+            "Bearer "+data.session.access_token
+        },
+        body:JSON.stringify({
+          action:"send",
+          cast_ids:selected.map(c => c.id),
+          message
+        })
+      }
+    );
 
     const result = await response.json();
 
     if (!response.ok || result.success !== true) {
       throw new Error(
         result.message ||
-        "LINE送信エラー（HTTP " + response.status + "）"
+        result.error ||
+        "LINE送信エラー（HTTP " +
+        response.status + "）"
       );
     }
 
@@ -795,6 +909,7 @@ $("bulkSendButton").addEventListener("click",async() => {
       unlinked:"LINE未連携",
       duplicate:"重複のため除外",
       not_found:"対象なし",
+      ambiguous:"グループ登録が複数あり要確認",
       failed:"送信失敗"
     };
 
@@ -807,10 +922,11 @@ $("bulkSendButton").addEventListener("click",async() => {
       "送信対象外：" + result.skipped + "人\n" +
       "送信失敗：" + result.failed + "人\n\n" +
       (result.results || []).map(r =>
-        r.name + "：" + (labels[r.status] || r.status)
+        r.name + "：" +
+        (labels[r.status] || r.status)
       ).join("\n");
 
-    // API受付成功した人のみ選択解除
+    // 送信受付成功したキャストのみ選択解除
     for (const r of result.results || []) {
       if (r.status === "accepted") {
         selectedTargets.delete(r.id);
@@ -821,12 +937,17 @@ $("bulkSendButton").addEventListener("click",async() => {
     resultBox.style.color = "#c72f40";
     resultBox.textContent =
       "送信エラー：" + error.message + "\n\n" +
-      "※ 通信エラー時は、すでに送信されている可能性があります。" +
+      "※ 通信エラー時は、すでに送信されている" +
+      "可能性があります。" +
       "確認せずに再送しないでください。";
+
   } finally {
     sending = false;
     button.disabled = false;
-    button.textContent = "選択したキャストにLINE送信";
+    button.textContent = sendMode === "group"
+      ? "選択したグループLINEに送信"
+      : "選択した個人LINEに送信";
+
     renderDays();
     renderTargets();
   }
@@ -849,13 +970,17 @@ $("loginForm").addEventListener("submit",async event => {
       });
 
     if (error) throw error;
-    if (!data.user) throw new Error("ログイン失敗");
+    if (!data.user) {
+      throw new Error("ログイン失敗");
+    }
 
     showApp(data.user);
 
   } catch (error) {
     $("loginError").textContent =
-      "ログインできませんでした。メールアドレスとパスワードを確認してください。";
+      "ログインできませんでした。" +
+      "メールアドレスとパスワードを確認してください。";
+
   } finally {
     button.disabled = false;
     button.textContent = "ログイン";
@@ -873,8 +998,10 @@ $("logoutButton").addEventListener("click",async() => {
     const {error} = await supabase.auth.signOut();
     if (error) throw error;
     showLogin();
+
   } catch (error) {
     alert("ログアウトに失敗しました。");
+
   } finally {
     button.disabled = false;
   }
@@ -919,7 +1046,9 @@ setInterval(() => {
 // 初期化
 async function initialize() {
   try {
-    const {data,error} = await supabase.auth.getSession();
+    const {data,error} =
+      await supabase.auth.getSession();
+
     if (error) throw error;
 
     if (data.session?.user) {
@@ -927,8 +1056,11 @@ async function initialize() {
     } else {
       showLogin();
     }
+
   } catch (error) {
-    showLogin("ログイン状態を確認できませんでした");
+    showLogin(
+      "ログイン状態を確認できませんでした"
+    );
   }
 }
 
