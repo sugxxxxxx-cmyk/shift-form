@@ -185,9 +185,9 @@ thead th:first-child{background:#edf1f7;z-index:4}
 
   <p class="note">
    ※ Supabaseに保存されたテストデータを表示します。<br>
-   ※ 約8秒ごとに他端末の更新を確認します。<br>
+   ※ 約30秒ごとに他端末の更新を確認します。<br>
    ※ マスをタップするとシフトを変更できます。<br>
-   ※ 変更はSupabaseに直接保存します。<br>
+   ※ 変更は管理者認証済みのサーバー経由でSupabaseに保存します。<br>
    ※ 現在のLINE提出・スプレッドシートとは別管理です。<br>
    ※ 本番運用前にスタッフ別権限とLINE連携を整備します。
   </p>
@@ -497,19 +497,17 @@ async function login(event){
  }
 }
 
+async function edgeRequest(payload){
+ const result=await dbRequest('/functions/v1/virgo-admin-data',{
+  method:'POST',body:JSON.stringify(payload)
+ });
+ if(!result?.success)throw new Error(result?.message||'サーバー処理に失敗しました');
+ return result;
+}
+
 async function checkAdmin(){
- const userId=session?.user?.id;
-
- if(!userId)return false;
-
- const rows=await dbRequest(
-  '/rest/v1/virgo_admins'+
-  '?select=user_id'+
-  '&user_id=eq.'+encodeURIComponent(userId)+
-  '&limit=1'
- );
-
- return Array.isArray(rows)&&rows.length===1;
+ const result=await edgeRequest({action:'checkAdmin'});
+ return result.success===true;
 }
 
 async function logout(){
@@ -746,41 +744,7 @@ async function saveShift(value){
  render();
 
  try{
-  if(value==='未提出'){
-   await dbRequest(
-    '/rest/v1/virgo_shifts'+
-    '?cast_id=eq.'+encodeURIComponent(cast.id)+
-    '&shift_date=eq.'+encodeURIComponent(dateStr),
-    {
-     method:'DELETE',
-     headers:{
-      Prefer:'return=representation'
-     }
-    }
-   );
-
-  }else{
-   const saved=await dbRequest(
-    '/rest/v1/virgo_shifts'+
-    '?on_conflict=cast_id,shift_date',
-    {
-     method:'POST',
-     headers:{
-      Prefer:'resolution=merge-duplicates,return=representation'
-     },
-     body:JSON.stringify({
-      cast_id:cast.id,
-      shift_date:dateStr,
-      shift_time:value,
-      updated_at:new Date().toISOString()
-     })
-    }
-   );
-
-   if(!Array.isArray(saved)||saved.length!==1){
-    throw new Error('保存結果を確認できませんでした');
-   }
-  }
+  await edgeRequest({action:'editShift',castId:cast.id,date:dateStr,time:value});
 
   const currentCast=remoteCasts.find(c=>c.id===cast.id);
 
@@ -832,50 +796,11 @@ async function loadRemote(){
  setStatus('Supabaseから読み込み中...');
 
  try{
-  const start=dates[0];
-  const end=dates[5];
+  const result=await edgeRequest({action:'getWeek',week});
 
-  const casts=await dbRequest(
-   '/rest/v1/virgo_casts'+
-   '?select=id,name'+
-   '&order=created_at.asc,id.asc'
-  );
-
-  const shifts=await dbRequest(
-   '/rest/v1/virgo_shifts'+
-   '?select=cast_id,shift_date,shift_time'+
-   '&shift_date=gte.'+start+
-   '&shift_date=lte.'+end
-  );
-
-  if(
-   requestId!==requestNumber ||
-   week!==dateKey(mondayOfWeek(weekOffset)) ||
-   !session
-  ){
-   return;
-  }
-
-  if(!Array.isArray(casts)||!Array.isArray(shifts)){
-   throw new Error('取得データが不正です');
-  }
-
-  const shiftMap=new Map();
-
-  shifts.forEach(shift=>{
-   shiftMap.set(
-    shift.cast_id+'|'+shift.shift_date,
-    shift.shift_time
-   );
-  });
-
-  remoteCasts=casts.map(cast=>({
-   id:cast.id,
-   name:cast.name,
-   days:dates.map(date=>
-    shiftMap.get(cast.id+'|'+date)||'未提出'
-   )
-  }));
+  if(requestId!==requestNumber||week!==dateKey(mondayOfWeek(weekOffset))||!session)return;
+  if(!Array.isArray(result.casts))throw new Error('取得データが不正です');
+  remoteCasts=result.casts;
 
   loadedWeek=week;
   render();
@@ -952,7 +877,7 @@ window.addEventListener('pageshow',()=>{
 });
 
 /*
- * 別端末の変更を約8秒ごとに確認。
+ * 別端末の変更を約30秒ごとに確認。
  * 保存中や非表示タブでは取得しない。
  */
 setInterval(()=>{
@@ -964,7 +889,7 @@ setInterval(()=>{
  ){
   loadRemote();
  }
-},8000);
+},30000);
 
 start();
 </script>
