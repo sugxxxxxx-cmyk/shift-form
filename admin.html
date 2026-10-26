@@ -18,6 +18,7 @@ main{max-width:1050px;margin:auto}
 .week{display:flex;justify-content:space-between;align-items:center;background:#fff;padding:14px;gap:10px}
 .week strong{font-size:17px}
 button{background:#fff;border:1px solid #dce2eb;border-radius:9px;padding:11px;font-size:14px;cursor:pointer}
+button:disabled{opacity:.55;cursor:wait}
 .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px}
 .metric{background:#fff;border-radius:12px;text-align:center;padding:15px 5px}
 .metric span{display:block;font-size:12px;color:#667085}
@@ -35,17 +36,31 @@ input{border:1px solid #dce2eb;border-radius:8px;padding:10px;font-size:15px;max
 .controls input{flex:1;min-width:140px}
 .sync{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 12px 0;color:#667085;font-size:12px}
 .sync button{padding:8px 12px;font-size:12px}
-.primary{background:#087a4a;color:#fff;border:0;font-weight:bold;text-decoration:none;display:inline-block;padding:12px 16px;border-radius:9px;font-size:14px}
+.primary{background:#087a4a;color:#fff;border:0;font-weight:bold;text-decoration:none;display:inline-block;padding:12px 16px;border-radius:9px;font-size:14px;cursor:pointer}
 .note{font-size:12px;color:#737e8e;line-height:1.7;padding:0 16px 20px}
 .empty{font-size:13px;color:#667085;padding:12px 0}
-@media(max-width:600px){.week strong{font-size:14px}}
+.login-wrap{max-width:420px;margin:45px auto;padding:0 16px}
+.login-card{background:#fff;border-radius:14px;padding:25px;box-shadow:0 4px 20px #14213d0d}
+.login-card h2{font-size:21px;margin:0 0 8px}
+.login-card p{font-size:13px;color:#667085;line-height:1.7}
+.login-card label{display:block;font-size:13px;font-weight:bold;margin:18px 0 7px}
+.login-card input{display:block;width:100%}
+.login-card .primary{width:100%;margin-top:22px}
+.error{color:#c72f40;font-size:13px;line-height:1.6;margin-top:12px}
+.account{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;background:#eaf4ee;font-size:12px;color:#087a4a}
+.account button{padding:7px 10px;font-size:12px}
+[hidden]{display:none!important}
+@media(max-width:600px){
+.week strong{font-size:14px}
+.account span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+}
 </style>
 </head>
 <body>
 
 <header>
  <h1>キャストシフト管理</h1>
- <small>Virgo Shift Manager ・ TEST</small>
+ <small>Virgo Shift Manager ・ SUPABASE</small>
 </header>
 
 <nav>
@@ -54,93 +69,143 @@ input{border:1px solid #dce2eb;border-radius:8px;padding:10px;font-size:15px;max
  <a href="staff.html">スタッフ管理</a>
 </nav>
 
-<main>
- <div class="week">
-  <button onclick="changeWeek(-1)">◀</button>
-  <div style="text-align:center">
-   <strong id="weekTitle"></strong>
-   <div>
-    <button onclick="goThisWeek()" style="padding:5px 10px;margin-top:5px;font-size:12px">今週</button>
+<section id="loginScreen" class="login-wrap" hidden>
+ <div class="login-card">
+  <h2>管理者ログイン</h2>
+  <p>Supabaseに登録した管理者アカウントでログインしてください。</p>
+
+  <form id="loginForm">
+   <label for="email">メールアドレス</label>
+   <input id="email" type="email" autocomplete="username" required>
+
+   <label for="password">パスワード</label>
+   <input id="password" type="password" autocomplete="current-password" required>
+
+   <button id="loginButton" class="primary" type="submit">ログイン</button>
+  </form>
+
+  <p id="loginError" class="error" role="alert"></p>
+ </div>
+</section>
+
+<div id="appScreen" hidden>
+ <div class="account">
+  <span id="accountEmail">ログイン中</span>
+  <button id="logoutButton">ログアウト</button>
+ </div>
+
+ <main>
+  <div class="week">
+   <button id="prevWeek">◀</button>
+   <div style="text-align:center">
+    <strong id="weekTitle"></strong>
+    <div>
+     <button id="thisWeek" style="padding:5px 10px;margin-top:5px;font-size:12px">今週</button>
+    </div>
+   </div>
+   <button id="nextWeek">▶</button>
+  </div>
+
+  <div class="sync">
+   <span id="syncStatus">Supabaseに接続中...</span>
+   <button id="refreshButton">更新する ↻</button>
+  </div>
+
+  <div class="summary">
+   <div class="metric">
+    <span>登録人数</span>
+    <b id="total">0</b>
+   </div>
+   <div class="metric">
+    <span>入力済み（6日分）</span>
+    <b id="done" style="color:#087a4a">0</b>
+   </div>
+   <div class="metric">
+    <span>未提出・未入力</span>
+    <b id="missing" style="color:#dc4450">0</b>
    </div>
   </div>
-  <button onclick="changeWeek(1)">▶</button>
- </div>
 
- <div class="sync">
-  <span id="syncStatus">スプレッドシートに接続中...</span>
-  <button onclick="loadRemote()">更新する ↻</button>
- </div>
+  <div class="section">
+   <h2>提出・入力状況</h2>
 
- <div class="summary">
-  <div class="metric">
-   <span>登録人数</span>
-   <b id="total">0</b>
-  </div>
-  <div class="metric">
-   <span>入力済み（6日分）</span>
-   <b id="done" style="color:#087a4a">0</b>
-  </div>
-  <div class="metric">
-   <span>未提出・未入力</span>
-   <b id="missing" style="color:#dc4450">0</b>
-  </div>
- </div>
+   <div class="controls">
+    <input id="search" placeholder="キャスト名で検索">
+    <button id="filter">未提出のみ</button>
+   </div>
 
- <div class="section">
-  <h2>提出・入力状況</h2>
-
-  <div class="controls">
-   <input id="search" placeholder="キャスト名で検索" oninput="render()">
-   <button id="filter" onclick="toggleFilter()">未提出のみ</button>
+   <div id="submissionList">読み込み中...</div>
   </div>
 
-  <div id="submissionList">読み込み中...</div>
- </div>
+  <div class="section">
+   <h2>シフトの確認・変更</h2>
+   <p style="font-size:13px;color:#667085;line-height:1.7">
+    出勤時間の確認や変更は「シフト一覧」から行えます。
+    キャスト名と曜日が表になっているので、変更したいマスをタップしてください。
+   </p>
+   <a class="primary" href="shift-view.html">シフト一覧を開く</a>
+  </div>
 
- <div class="section">
-  <h2>シフトの確認・変更</h2>
-  <p style="font-size:13px;color:#667085;line-height:1.7">
-   出勤時間の確認や変更は「シフト一覧」から行えます。
-   キャスト名と曜日が表になっているので、変更したいマスをタップしてください。
+  <p class="note">
+   ※ キャスト名簿と日別シフトをSupabaseから取得します。<br>
+   ※ 約30秒ごとに更新を確認します。<br>
+   ※ 「入力済み」は月〜土の6日分すべてが登録された状態です。<br>
+   ※ LINE本人提出と管理側入力の区別は、まだ実装していません。<br>
+   ※ シフト一覧ページは別途Supabase対応が必要です。<br>
+   ※ 本番運用前に全ページのアクセス制限を確認してください。
   </p>
-  <a class="primary" href="shift-view.html">シフト一覧を開く</a>
- </div>
+ </main>
+</div>
 
- <p class="note">
-  ※ キャスト名簿と日別シフトから自動取得します。<br>
-  ※ 約30秒ごとに更新を確認します。<br>
-  ※ 「入力済み」は月〜土の6日分すべてが登録された状態です。<br>
-  ※ LINE本人提出と管理側入力の区別は、まだ実装していません。<br>
-  ※ 公開テスト専用です。実在するキャスト情報を登録しないでください。<br>
-  ※ 本番運用前にログイン・アクセス制限を追加してください。
- </p>
-</main>
+<script type="module">
+import { createClient } from
+ "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
-<script>
-const API_URL =
- 'https://script.google.com/macros/s/AKfycbzp3OJOz1hJfg-9fVt2FHGsDj1aCqGgww4mzQzgBRbulxp_kE2FQH8B-EkDK9AeyZ42/exec';
+const SUPABASE_URL =
+ "https://krfzidbqoyhmkeylvneh.supabase.co";
 
-let weekOffset=0;
-let onlyMissing=false;
-let casts=[];
-let loadedWeek='';
-let requestNumber=0;
+const SUPABASE_KEY =
+ "sb_publishable_4W4TXn_pvYcoLxJIwzbb2A_vRMvUbp5";
+
+const FUNCTION_URL =
+ SUPABASE_URL + "/functions/v1/virgo-admin-data";
+
+const supabase = createClient(
+ SUPABASE_URL,
+ SUPABASE_KEY,
+ {
+  auth:{
+   persistSession:true,
+   autoRefreshToken:true,
+   detectSessionInUrl:false
+  }
+ }
+);
+
+let weekOffset = 0;
+let onlyMissing = false;
+let casts = [];
+let loadedWeek = "";
+let requestNumber = 0;
+let currentUserId = null;
+
+const $ = id => document.getElementById(id);
 
 function mondayOfWeek(offset){
- const d=new Date();
+ const d = new Date();
  d.setHours(12,0,0,0);
  d.setDate(d.getDate()-(d.getDay()+6)%7+offset*7);
  return d;
 }
 
 function dateKey(d){
- return d.getFullYear()+'-'+
-  String(d.getMonth()+1).padStart(2,'0')+'-'+
-  String(d.getDate()).padStart(2,'0');
+ return d.getFullYear()+"-"+
+  String(d.getMonth()+1).padStart(2,"0")+"-"+
+  String(d.getDate()).padStart(2,"0");
 }
 
 function dateText(d){
- return (d.getMonth()+1)+'/'+d.getDate();
+ return (d.getMonth()+1)+"/"+d.getDate();
 }
 
 function weekKey(){
@@ -150,232 +215,333 @@ function weekKey(){
 function isComplete(cast){
  return Array.isArray(cast.days) &&
   cast.days.length===6 &&
-  cast.days.every(time=>
+  cast.days.every(time =>
    time &&
-   time!=='未提出' &&
-   time!=='未'
+   time!=="未提出" &&
+   time!=="未"
   );
 }
 
 function getFilledCount(cast){
- if(!Array.isArray(cast.days))return 0;
-
- return cast.days.filter(time=>
+ if(!Array.isArray(cast.days)) return 0;
+ return cast.days.filter(time =>
   time &&
-  time!=='未提出' &&
-  time!=='未'
+  time!=="未提出" &&
+  time!=="未"
  ).length;
 }
 
-function changeWeek(n){
- weekOffset+=n;
- casts=[];
- loadedWeek='';
- render();
- loadRemote();
-}
-
-function goThisWeek(){
- weekOffset=0;
- casts=[];
- loadedWeek='';
- render();
- loadRemote();
-}
-
-function toggleFilter(){
- onlyMissing=!onlyMissing;
-
- document.getElementById('filter').textContent=
-  onlyMissing?'全員表示':'未提出のみ';
-
- render();
-}
-
 function setStatus(message){
- document.getElementById('syncStatus').textContent=message;
+ $("syncStatus").textContent = message;
+}
+
+function showLogin(message=""){
+ requestNumber++;
+ currentUserId = null;
+ casts = [];
+ loadedWeek = "";
+
+ $("appScreen").hidden = true;
+ $("loginScreen").hidden = false;
+ $("loginError").textContent = message;
+ $("password").value = "";
+}
+
+function showApp(user){
+ currentUserId = user.id;
+ $("accountEmail").textContent =
+  "ログイン中：" + (user.email || "管理者");
+
+ $("loginScreen").hidden = true;
+ $("appScreen").hidden = false;
+
+ render();
+ loadRemote();
 }
 
 function render(){
- const monday=mondayOfWeek(weekOffset);
- const saturday=new Date(monday);
+ const monday = mondayOfWeek(weekOffset);
+ const saturday = new Date(monday);
  saturday.setDate(saturday.getDate()+5);
 
- document.getElementById('weekTitle').textContent=
-  dateText(monday)+' 〜 '+dateText(saturday);
+ $("weekTitle").textContent =
+  dateText(monday)+" 〜 "+dateText(saturday);
 
- const completed=casts.filter(isComplete).length;
+ const completed = casts.filter(isComplete).length;
 
- document.getElementById('total').textContent=casts.length;
- document.getElementById('done').textContent=completed;
- document.getElementById('missing').textContent=
-  casts.length-completed;
+ $("total").textContent = casts.length;
+ $("done").textContent = completed;
+ $("missing").textContent = casts.length-completed;
 
- const query=document.getElementById('search').value.trim();
- const list=document.getElementById('submissionList');
+ const query = $("search").value.trim();
+ const list = $("submissionList");
 
  list.replaceChildren();
 
- let visible=0;
+ let visible = 0;
 
- casts.forEach(cast=>{
-  const complete=isComplete(cast);
-  const filled=getFilledCount(cast);
+ casts.forEach(cast => {
+  const complete = isComplete(cast);
+  const filled = getFilledCount(cast);
 
-  if(onlyMissing && complete)return;
-  if(!cast.name.includes(query))return;
+  if(onlyMissing && complete) return;
+  if(!cast.name.includes(query)) return;
 
   visible++;
 
-  const row=document.createElement('div');
-  row.className='row';
+  const row = document.createElement("div");
+  row.className = "row";
 
-  const name=document.createElement('strong');
-  name.textContent=cast.name;
+  const name = document.createElement("strong");
+  name.textContent = cast.name;
 
-  const badge=document.createElement('span');
-  badge.className='badge '+(
-   complete?'done':
-   filled>0?'partial':'missing'
+  const badge = document.createElement("span");
+  badge.className = "badge " + (
+   complete ? "done" :
+   filled>0 ? "partial" : "missing"
   );
 
-  badge.textContent=complete
-   ? '入力済み（6/6）'
+  badge.textContent = complete
+   ? "入力済み（6/6）"
    : filled>0
-    ? '一部入力（'+filled+'/6）'
-    : '未提出';
+    ? "一部入力（"+filled+"/6）"
+    : "未提出";
 
   row.append(name,badge);
   list.appendChild(row);
  });
 
  if(!visible){
-  const p=document.createElement('p');
-  p.className='empty';
+  const p = document.createElement("p");
+  p.className = "empty";
 
-  p.textContent=loadedWeek
-   ? '該当するキャストがいません'
-   : 'シフトを読み込み中です';
+  p.textContent = loadedWeek
+   ? "該当するキャストがいません"
+   : "シフトを読み込み中です";
 
   list.appendChild(p);
  }
 }
 
-// スプレッドシートのデータをJSONPで取得
-function fetchWeekData(week){
- return new Promise((resolve,reject)=>{
-  const callback=
-   'virgoDemoCallback_admin_'+
-   Date.now()+'_'+
-   Math.floor(Math.random()*1000000);
+function changeWeek(n){
+ weekOffset += n;
+ requestNumber++;
+ casts = [];
+ loadedWeek = "";
+ render();
+ loadRemote();
+}
 
-  const script=document.createElement('script');
-  let finished=false;
+function goThisWeek(){
+ weekOffset = 0;
+ requestNumber++;
+ casts = [];
+ loadedWeek = "";
+ render();
+ loadRemote();
+}
 
-  const timer=setTimeout(()=>{
-   finish(new Error('読み込みがタイムアウトしました'));
-  },15000);
+function toggleFilter(){
+ onlyMissing = !onlyMissing;
 
-  function finish(error,result){
-   if(finished)return;
+ $("filter").textContent =
+  onlyMissing ? "全員表示" : "未提出のみ";
 
-   finished=true;
-   clearTimeout(timer);
-   script.remove();
+ render();
+}
 
-   try{
-    delete window[callback];
-   }catch(e){
-    window[callback]=undefined;
-   }
-
-   if(error){
-    reject(error);
-   }else{
-    resolve(result);
-   }
-  }
-
-  window[callback]=result=>{
-   if(
-    !result ||
-    result.success!==true ||
-    result.week!==week ||
-    !Array.isArray(result.casts)
-   ){
-    finish(new Error('シフトの取得に失敗しました'));
-    return;
-   }
-
-   finish(null,result);
-  };
-
-  script.onerror=()=>{
-   finish(new Error('通信エラー'));
-  };
-
-  script.src=API_URL+
-   '?action=demoShiftView'+
-   '&week='+encodeURIComponent(week)+
-   '&callback='+encodeURIComponent(callback)+
-   '&_='+Date.now();
-
-  document.head.appendChild(script);
+async function fetchWeekData(week,token){
+ const response = await fetch(FUNCTION_URL,{
+  method:"POST",
+  headers:{
+   "Content-Type":"application/json",
+   "apikey":SUPABASE_KEY,
+   "Authorization":"Bearer "+token
+  },
+  body:JSON.stringify({week})
  });
+
+ let result;
+
+ try{
+  result = await response.json();
+ }catch{
+  throw new Error("サーバーから正しい応答がありません");
+ }
+
+ if(!response.ok || result.success!==true){
+  const error = new Error(
+   result.message || "シフトの取得に失敗しました"
+  );
+  error.status = response.status;
+  throw error;
+ }
+
+ if(result.week!==week || !Array.isArray(result.casts)){
+  throw new Error("取得データの形式が不正です");
+ }
+
+ return result;
 }
 
 async function loadRemote(){
- const week=weekKey();
- const id=++requestNumber;
+ if(!currentUserId || $("appScreen").hidden) return;
 
- setStatus('スプレッドシートから読み込み中...');
+ const week = weekKey();
+ const id = ++requestNumber;
+ const userId = currentUserId;
+
+ setStatus("Supabaseから読み込み中...");
 
  try{
-  const result=await fetchWeekData(week);
+  const {
+   data:{session},
+   error:sessionError
+  } = await supabase.auth.getSession();
 
-  if(id!==requestNumber || week!==weekKey())return;
+  if(sessionError || !session?.access_token){
+   showLogin("ログインの有効期限が切れました");
+   return;
+  }
 
-  casts=result.casts
-   .filter(c=>
+  if(session.user.id!==userId) return;
+
+  const result = await fetchWeekData(
+   week,
+   session.access_token
+  );
+
+  if(
+   id!==requestNumber ||
+   week!==weekKey() ||
+   userId!==currentUserId
+  ) return;
+
+  casts = result.casts
+   .filter(c =>
     c &&
-    typeof c.id==='string' &&
-    typeof c.name==='string' &&
+    typeof c.id==="string" &&
+    typeof c.name==="string" &&
     Array.isArray(c.days)
    )
-   .map(c=>({
+   .map(c => ({
     id:c.id,
     name:c.name,
     days:c.days.slice(0,6),
     submitted:c.submitted===true
    }));
 
-  loadedWeek=week;
+  loadedWeek = week;
 
   setStatus(
-   'スプレッドシートと接続済み ・ '+
-   new Date().toLocaleTimeString('ja-JP')+
-   ' 更新'
+   "Supabaseと接続済み ・ "+
+   new Date().toLocaleTimeString("ja-JP")+
+   " 更新"
   );
 
   render();
 
  }catch(error){
-  if(id===requestNumber){
-   setStatus('読み込みエラー：'+error.message);
+  if(id!==requestNumber) return;
+
+  if(error.status===401){
+   setStatus("ログイン情報を確認してください");
+  }else if(error.status===403){
+   setStatus("管理者権限がありません");
+  }else{
+   setStatus("読み込みエラー："+error.message);
   }
+
+  console.error("Shift load error:",error);
  }
 }
 
-window.addEventListener('pageshow',loadRemote);
+$("loginForm").addEventListener("submit",async e=>{
+ e.preventDefault();
+
+ const button = $("loginButton");
+ button.disabled = true;
+ button.textContent = "ログイン中...";
+ $("loginError").textContent = "";
+
+ try{
+  const email = $("email").value.trim();
+  const password = $("password").value;
+
+  const {data,error} =
+   await supabase.auth.signInWithPassword({
+    email,
+    password
+   });
+
+  if(error) throw error;
+  if(!data.user) throw new Error("ログインできませんでした");
+
+  showApp(data.user);
+
+ }catch(error){
+  $("loginError").textContent =
+   "ログインできませんでした。メールアドレスとパスワードを確認してください。";
+  console.error("Login error:",error);
+ }finally{
+  button.disabled = false;
+  button.textContent = "ログイン";
+ }
+});
+
+$("logoutButton").addEventListener("click",async()=>{
+ $("logoutButton").disabled = true;
+
+ try{
+  const {error} = await supabase.auth.signOut();
+  if(error) throw error;
+  showLogin();
+ }catch(error){
+  alert("ログアウトに失敗しました。もう一度お試しください。");
+  console.error(error);
+ }finally{
+  $("logoutButton").disabled = false;
+ }
+});
+
+$("prevWeek").addEventListener("click",()=>changeWeek(-1));
+$("nextWeek").addEventListener("click",()=>changeWeek(1));
+$("thisWeek").addEventListener("click",goThisWeek);
+$("refreshButton").addEventListener("click",loadRemote);
+$("filter").addEventListener("click",toggleFilter);
+$("search").addEventListener("input",render);
+
+window.addEventListener("pageshow",()=>{
+ if(currentUserId) loadRemote();
+});
 
 setInterval(()=>{
- if(document.visibilityState==='visible'){
+ if(
+  document.visibilityState==="visible" &&
+  currentUserId
+ ){
   loadRemote();
  }
 },30000);
 
-render();
-loadRemote();
+async function initialize(){
+ try{
+  const {data,error} = await supabase.auth.getSession();
+
+  if(error) throw error;
+
+  if(data.session?.user){
+   showApp(data.session.user);
+  }else{
+   showLogin();
+  }
+ }catch(error){
+  console.error("Initialization error:",error);
+  showLogin("ログイン状態を確認できませんでした");
+ }
+}
+
+initialize();
 </script>
 </body>
 </html>
