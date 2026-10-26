@@ -1,175 +1,113 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>スタッフ管理 | Virgo</title>
-
 <style>
 *{box-sizing:border-box}
 body{
- margin:0;
- background:#f4f6fa;
- color:#202b3a;
+ margin:0;background:#f4f6fa;color:#202b3a;
  font-family:-apple-system,BlinkMacSystemFont,sans-serif
 }
-header{
- background:#131c2d;
- color:white;
- padding:17px 16px
-}
+header{background:#131c2d;color:white;padding:17px 16px}
 header h1{font-size:20px;margin:0}
 header small{font-size:11px;color:#b9c5d5}
-nav{
- display:flex;
- background:white;
- border-bottom:1px solid #e2e7ef
-}
+nav{display:flex;background:white;border-bottom:1px solid #e2e7ef}
 nav a{
- flex:1;
- text-align:center;
- text-decoration:none;
- color:#667085;
- padding:15px 4px;
- font-size:13px;
- font-weight:bold
+ flex:1;text-align:center;text-decoration:none;color:#667085;
+ padding:15px 4px;font-size:13px;font-weight:bold
 }
-nav a.active{
- color:#087a4a;
- border-bottom:3px solid #087a4a
-}
-main{
- max-width:1050px;
- margin:auto;
- padding:12px
-}
+nav a.active{color:#087a4a;border-bottom:3px solid #087a4a}
+main{max-width:1050px;margin:auto;padding:12px}
 .section{
- background:white;
- border-radius:12px;
- padding:16px;
+ background:white;border-radius:12px;padding:16px;
  margin-bottom:12px
 }
-.section h2{
- font-size:17px;
- margin:0 0 14px
-}
+.section h2{font-size:17px;margin:0 0 14px}
 .row{
- display:flex;
- align-items:center;
- justify-content:space-between;
- gap:10px;
- padding:13px 0;
- border-bottom:1px solid #edf0f4
+ display:flex;align-items:center;justify-content:space-between;
+ gap:10px;padding:13px 0;border-bottom:1px solid #edf0f4
 }
 .row:last-child{border-bottom:0}
 .name{font-size:14px;font-weight:600}
 .sub{
- font-size:12px;
- color:#7a8494;
- margin-top:4px
+ font-size:12px;color:#7a8494;margin-top:4px;
+ line-height:1.6;overflow-wrap:anywhere
 }
-.buttons{
- display:flex;
- gap:6px;
- flex-shrink:0
-}
+.buttons{display:flex;gap:6px;flex-shrink:0}
 button{
- border:1px solid #dce2eb;
- background:white;
- border-radius:9px;
- padding:10px 12px;
- font-size:13px;
- cursor:pointer
+ border:1px solid #dce2eb;background:white;border-radius:9px;
+ padding:10px 12px;font-size:13px;cursor:pointer
 }
-button:disabled{
- opacity:.5;
- cursor:not-allowed
-}
-.primary{
- background:#087a4a;
- color:white;
- border:0;
- font-weight:bold
-}
+button:disabled{opacity:.5;cursor:not-allowed}
+.primary{background:#087a4a;color:white;border:0;font-weight:bold}
 .danger{color:#d33b48}
 .badge{
- display:inline-block;
- border-radius:20px;
- padding:5px 9px;
- font-size:11px;
- font-weight:bold
+ display:inline-block;border-radius:20px;padding:5px 9px;
+ font-size:11px;font-weight:bold
 }
 .green{background:#d8f8e5;color:#087a3f}
 .gray{background:#f0f1f4;color:#667085}
 .blue{background:#e7f1ff;color:#2455a4}
-.controls{
- display:flex;
- gap:8px;
- margin-bottom:10px
-}
+.orange{background:#fff0d5;color:#a66a00}
+.controls{display:flex;gap:8px;margin-bottom:10px}
 input,select{
- border:1px solid #dce2eb;
- border-radius:9px;
- padding:11px;
- font-size:15px;
- min-width:0
+ border:1px solid #dce2eb;border-radius:9px;
+ padding:11px;font-size:15px;min-width:0
 }
 .controls input{flex:1}
-.form{
- display:grid;
- grid-template-columns:1fr auto;
- gap:8px
-}
+.form{display:grid;grid-template-columns:1fr auto;gap:8px}
 .note{
- font-size:12px;
- color:#737e8e;
- line-height:1.7;
- padding:0 5px
+ font-size:12px;color:#737e8e;line-height:1.7;padding:0 5px
 }
 .statusbar{
- display:flex;
- align-items:center;
- justify-content:space-between;
- gap:8px;
- padding:12px 3px;
- font-size:12px;
- color:#65748a
+ display:flex;align-items:center;justify-content:space-between;
+ gap:8px;padding:12px 3px;font-size:12px;color:#65748a
 }
 .loginbar{
- background:#eaf5ee;
- padding:12px 16px;
- color:#087a4a;
- font-size:12px;
- display:flex;
- justify-content:space-between;
- align-items:center;
- gap:10px
+ background:#eaf5ee;padding:12px 16px;color:#087a4a;
+ font-size:12px;display:flex;justify-content:space-between;
+ align-items:center;gap:10px
 }
 .error{color:#d33b48}
-.count{
- font-size:12px;
- color:#667085;
- margin-bottom:10px
+.count{font-size:12px;color:#667085;margin-bottom:10px}
+.request-box{
+ background:#f7f9fc;border:1px solid #e4eaf2;
+ border-radius:10px;padding:12px;margin-bottom:10px
+}
+.request-box .row{border-bottom:0;padding:0}
+.request-info{min-width:0}
+.section-head{
+ display:flex;align-items:center;justify-content:space-between;
+ gap:10px;margin-bottom:12px
+}
+.section-head h2{margin:0}
+#requestMessage{
+ font-size:12px;color:#667085;margin:10px 0;
+ white-space:pre-line
 }
 @media(max-width:600px){
  .form{grid-template-columns:1fr}
  .row{align-items:flex-start}
  .buttons button{padding:9px}
+ .request-box .row{flex-wrap:wrap}
+ .request-box .buttons{margin-top:8px}
 }
 </style>
 </head>
-
 <body>
 
 <header>
-<h1>スタッフ管理</h1>
-<small>Virgo Shift Manager ・ SUPABASE</small>
+ <h1>スタッフ管理</h1>
+ <small>Virgo Shift Manager ・ SUPABASE</small>
 </header>
 
 <nav>
-<a href="shift-view.html">シフト一覧</a>
-<a href="admin.html">シフト管理</a>
-<a href="staff.html" class="active">スタッフ管理</a>
+ <a href="shift-view.html">シフト一覧</a>
+ <a href="admin.html">シフト管理</a>
+ <a href="staff.html" class="active">スタッフ管理</a>
 </nav>
 
 <div class="loginbar">
@@ -181,79 +119,92 @@ input,select{
 
 <div class="statusbar">
  <span id="status">Supabaseに接続中...</span>
- <button onclick="loadCasts()">更新する ↻</button>
+ <button id="refreshButton" onclick="refreshAll()">更新する ↻</button>
 </div>
 
+<!-- LINE連携申請 -->
 <div class="section">
-<h2>キャスト管理</h2>
-
-<div class="controls">
-<input
- id="search"
- placeholder="キャスト名で検索"
- oninput="render()"
->
-</div>
-
-<div class="count" id="castCount"></div>
-
-<div id="castList">
-読み込み中...
-</div>
-</div>
-
-<div class="section">
-<h2>キャストを追加</h2>
-
-<div class="form">
-<input
- id="newName"
- placeholder="キャスト名"
- maxlength="50"
->
-<button
- class="primary"
- id="addButton"
- onclick="addCast()"
->
-追加
-</button>
-</div>
-
-<p class="sub">
-追加したキャストは、シフト一覧・シフト管理にも表示されます。
-</p>
-</div>
-
-<div class="section">
-<h2>管理者アカウント</h2>
-
-<p class="sub">
-現在ログインしているSupabaseアカウントで、
-スタッフ管理を操作します。
-</p>
-
-<div class="row">
- <div>
-  <div class="name" id="accountEmail">確認中...</div>
-  <div class="sub">管理者認証</div>
+ <div class="section-head">
+  <h2>LINE連携申請</h2>
+  <span id="requestCount" class="badge orange">確認中</span>
  </div>
- <span class="badge green" id="accountStatus">
-  確認中
- </span>
+
+ <p class="sub">
+  キャストから届いたLINE連携申請を確認できます。
+  源氏名とLINE表示名を確認してから承認してください。
+ </p>
+
+ <div id="requestMessage">申請を読み込み中...</div>
+ <div id="requestList"></div>
 </div>
 
-<p class="sub">
-店長・管理者・社員・スタッフの細かな権限分けは、
-今後追加できます。
-</p>
+<!-- キャスト管理 -->
+<div class="section">
+ <h2>キャスト管理</h2>
+
+ <div class="controls">
+  <input
+   id="search"
+   placeholder="キャスト名で検索"
+   oninput="render()"
+  >
+ </div>
+
+ <div class="count" id="castCount"></div>
+ <div id="castList">読み込み中...</div>
+</div>
+
+<!-- キャスト追加 -->
+<div class="section">
+ <h2>キャストを追加</h2>
+
+ <div class="form">
+  <input
+   id="newName"
+   placeholder="キャスト名"
+   maxlength="50"
+  >
+  <button
+   class="primary"
+   id="addButton"
+   onclick="addCast()"
+   disabled
+  >追加</button>
+ </div>
+
+ <p class="sub">
+  追加したキャストは、シフト一覧・シフト管理にも表示されます。
+ </p>
+</div>
+
+<!-- 管理者アカウント -->
+<div class="section">
+ <h2>管理者アカウント</h2>
+
+ <p class="sub">
+  現在ログインしているSupabaseアカウントで、
+  スタッフ管理とLINE連携申請を操作します。
+ </p>
+
+ <div class="row">
+  <div>
+   <div class="name" id="accountEmail">確認中...</div>
+   <div class="sub">管理者認証</div>
+  </div>
+  <span class="badge gray" id="accountStatus">確認中</span>
+ </div>
+
+ <p class="sub">
+  店長・管理者・社員・スタッフの細かな権限分けは、
+  今後追加できます。
+ </p>
 </div>
 
 <p class="note">
-※ Supabaseのキャスト名簿と連動しています。<br>
-※ 追加・編集・削除はサーバー側で管理者認証を行います。<br>
-※ LINE連携状態はこの画面では変更しません。<br>
-※ シフト履歴があるキャストは誤削除防止のため削除できません。
+ ※ Supabaseのキャスト名簿と連動しています。<br>
+ ※ 追加・編集・削除・LINE承認はサーバー側で管理者認証を行います。<br>
+ ※ LINE連携の承認は、登録済みキャストと源氏名が一致する場合に行います。<br>
+ ※ シフト履歴があるキャストは誤削除防止のため削除できません。
 </p>
 
 </main>
@@ -286,6 +237,7 @@ const client = window.supabase.createClient(
 );
 
 let casts = [];
+let requests = [];
 let busy = false;
 let authorized = false;
 
@@ -296,11 +248,18 @@ function setStatus(message,isError=false){
  $("status").className=isError?"error":"";
 }
 
+function setRequestMessage(message,isError=false){
+ $("requestMessage").textContent=message;
+ $("requestMessage").className=isError?"error":"";
+}
+
 function setBusy(value){
  busy=value;
  $("addButton").disabled=value||!authorized;
+ $("refreshButton").disabled=value;
+
  document.querySelectorAll(
-  "#castList button"
+  "#castList button, #requestList button"
  ).forEach(button=>{
   button.disabled=value||!authorized;
  });
@@ -318,13 +277,9 @@ async function getToken(){
   );
  }
 
- // 期限切れ直前なら更新
  const now=Math.floor(Date.now()/1000);
 
- if(
-  session.expires_at &&
-  session.expires_at-now<60
- ){
+ if(session.expires_at && session.expires_at-now<60){
   const refreshed=await client.auth.refreshSession();
 
   if(refreshed.error||!refreshed.data.session){
@@ -367,14 +322,14 @@ async function api(action,payload={}){
 
  if(!response.ok||!result.success){
   throw new Error(
-   result.message||
-   "処理に失敗しました"
+   result.message||"処理に失敗しました"
   );
  }
 
  return result;
 }
 
+// 初期化
 async function initialize(){
  try{
   const {
@@ -385,39 +340,46 @@ async function initialize(){
    $("loginInfo").textContent="未ログイン";
    $("accountEmail").textContent="未ログイン";
    $("accountStatus").textContent="要ログイン";
+
    setStatus(
     "シフト管理画面からログインしてください",
     true
    );
-   $("castList").textContent=
-    "ログイン後に表示されます";
+
+   $("castList").textContent="ログイン後に表示されます";
+   $("requestList").textContent="ログイン後に表示されます";
+   setRequestMessage("");
+
    return;
   }
 
   const email=session.user.email||"ログイン中";
 
-  $("loginInfo").textContent=
-   "ログイン中："+email;
-
+  $("loginInfo").textContent="ログイン中："+email;
   $("accountEmail").textContent=email;
 
-  await loadCasts();
+  await refreshAll();
 
  }catch(error){
   setStatus(error.message,true);
  }
 }
 
-async function loadCasts(){
+// 全データ更新
+async function refreshAll(){
  if(busy)return;
 
- setStatus("キャスト名簿を読み込み中...");
+ setStatus("Supabaseから読み込み中...");
+ setRequestMessage("LINE連携申請を確認中...");
+
+ setBusy(true);
 
  try{
-  const result=await api("list");
+  // まず管理者認証を兼ねてキャスト一覧を取得
+  const castResult=await api("list");
 
-  casts=Array.isArray(result.casts)
-   ?result.casts
+  casts=Array.isArray(castResult.casts)
+   ?castResult.casts
    :[];
 
   authorized=true;
@@ -425,9 +387,32 @@ async function loadCasts(){
   $("accountStatus").textContent="認証済み";
   $("accountStatus").className="badge green";
 
-  $("addButton").disabled=false;
-
   render();
+
+  // LINE申請一覧
+  try{
+   const requestResult=await api("listLineRequests");
+
+   requests=Array.isArray(requestResult.requests)
+    ?requestResult.requests
+    :[];
+
+   renderRequests();
+
+   setRequestMessage(
+    requests.length
+     ?"申請内容を確認して、承認または却下してください。"
+     :"現在、申請中のLINE連携はありません。"
+   );
+
+  }catch(error){
+   requests=[];
+   renderRequests();
+   setRequestMessage(
+    "LINE申請の読み込みエラー："+error.message,
+    true
+   );
+  }
 
   const time=new Date().toLocaleTimeString(
    "ja-JP",
@@ -438,27 +423,40 @@ async function loadCasts(){
    }
   );
 
-  setStatus(
-   "Supabaseと接続済み ・ "+time+" 更新"
-  );
+  setStatus("Supabaseと接続済み ・ "+time+" 更新");
 
  }catch(error){
   authorized=false;
   casts=[];
+  requests=[];
 
   $("accountStatus").textContent="未認証";
   $("accountStatus").className="badge gray";
 
-  $("addButton").disabled=true;
-
   render();
+  renderRequests();
+
+  setRequestMessage(
+   "管理者認証後にLINE申請を表示します",
+   true
+  );
+
   setStatus(
    "読み込みエラー："+error.message,
    true
   );
+
+ }finally{
+  setBusy(false);
  }
 }
 
+// 既存の更新ボタンとの互換
+async function loadCasts(){
+ await refreshAll();
+}
+
+// キャスト一覧表示
 function render(){
  const query=$("search").value.trim();
  const target=$("castList");
@@ -495,7 +493,11 @@ function render(){
 
   const sub=document.createElement("div");
   sub.className="sub";
-  sub.textContent="Supabase登録済み";
+
+  sub.textContent=
+   cast.line_link_status==="連携済み"
+    ?"LINE連携済み"
+    :"LINE未連携";
 
   info.append(name,sub);
 
@@ -519,6 +521,143 @@ function render(){
  });
 }
 
+// LINE連携申請表示
+function renderRequests(){
+ const target=$("requestList");
+ target.innerHTML="";
+
+ $("requestCount").textContent=
+  "申請中 "+requests.length+"件";
+
+ if(!requests.length)return;
+
+ requests.forEach(request=>{
+  const box=document.createElement("div");
+  box.className="request-box";
+
+  const row=document.createElement("div");
+  row.className="row";
+
+  const info=document.createElement("div");
+  info.className="request-info";
+
+  const name=document.createElement("div");
+  name.className="name";
+  name.textContent=request.cast_name||"名前なし";
+
+  const lineName=document.createElement("div");
+  lineName.className="sub";
+  lineName.textContent=
+   "LINE表示名："+(request.line_display_name||"未取得");
+
+  const matchingCast=casts.find(
+   cast=>cast.name===request.cast_name
+  );
+
+  const match=document.createElement("div");
+  match.className="sub";
+
+  if(matchingCast){
+   match.textContent="名簿照合：一致";
+   match.style.color="#087a4a";
+  }else{
+   match.textContent=
+    "名簿照合：該当なし（先にキャスト登録が必要）";
+   match.style.color="#d33b48";
+  }
+
+  info.append(name,lineName,match);
+
+  const buttons=document.createElement("div");
+  buttons.className="buttons";
+
+  const approve=document.createElement("button");
+  approve.className="primary";
+  approve.textContent="承認";
+  approve.disabled=busy||!authorized||!matchingCast;
+  approve.onclick=()=>approveRequest(request);
+
+  const reject=document.createElement("button");
+  reject.className="danger";
+  reject.textContent="却下";
+  reject.disabled=busy||!authorized;
+  reject.onclick=()=>rejectRequest(request);
+
+  buttons.append(approve,reject);
+  row.append(info,buttons);
+  box.appendChild(row);
+  target.appendChild(box);
+ });
+}
+
+// LINE連携承認
+async function approveRequest(request){
+ if(busy||!authorized)return;
+
+ const castName=request.cast_name||"このキャスト";
+ const displayName=request.line_display_name||"未取得";
+
+ const confirmed=confirm(
+  "以下のLINE連携を承認しますか？\n\n"+
+  "源氏名："+castName+"\n"+
+  "LINE表示名："+displayName+"\n\n"+
+  "承認すると、このLINEアカウントがキャストに紐付きます。"
+ );
+
+ if(!confirmed)return;
+
+ setBusy(true);
+ setStatus("LINE連携を承認中...");
+
+ try{
+  const result=await api("approveLineRequest",{
+   requestId:request.id
+  });
+
+  setBusy(false);
+  await refreshAll();
+
+  alert(result.message||"LINE連携を承認しました");
+
+ }catch(error){
+  setBusy(false);
+  setStatus(error.message,true);
+  alert(error.message);
+ }
+}
+
+// LINE連携却下
+async function rejectRequest(request){
+ if(busy||!authorized)return;
+
+ const confirmed=confirm(
+  (request.cast_name||"このキャスト")+
+  "のLINE連携申請を却下しますか？"
+ );
+
+ if(!confirmed)return;
+
+ setBusy(true);
+ setStatus("LINE連携申請を却下中...");
+
+ try{
+  const result=await api("rejectLineRequest",{
+   requestId:request.id
+  });
+
+  setBusy(false);
+  await refreshAll();
+
+  alert(result.message||"申請を却下しました");
+
+ }catch(error){
+  setBusy(false);
+  setStatus(error.message,true);
+  alert(error.message);
+ }
+}
+
+// キャスト追加
 async function addCast(){
  if(busy||!authorized)return;
 
@@ -544,7 +683,7 @@ async function addCast(){
   input.value="";
 
   setBusy(false);
-  await loadCasts();
+  await refreshAll();
 
   alert("キャストを追加しました");
 
@@ -555,6 +694,7 @@ async function addCast(){
  }
 }
 
+// キャスト編集
 async function editCast(cast){
  if(busy||!authorized)return;
 
@@ -593,7 +733,7 @@ async function editCast(cast){
   });
 
   setBusy(false);
-  await loadCasts();
+  await refreshAll();
 
   alert("キャスト名を変更しました");
 
@@ -604,6 +744,7 @@ async function editCast(cast){
  }
 }
 
+// キャスト削除
 async function removeCast(cast){
  if(busy||!authorized)return;
 
@@ -622,7 +763,7 @@ async function removeCast(cast){
   });
 
   setBusy(false);
-  await loadCasts();
+  await refreshAll();
 
   alert("キャストを削除しました");
 
@@ -633,6 +774,7 @@ async function removeCast(cast){
  }
 }
 
+// ログアウト
 async function logout(){
  if(!confirm("ログアウトしますか？"))return;
 
@@ -643,6 +785,5 @@ async function logout(){
 
 initialize();
 </script>
-
 </body>
 </html>
