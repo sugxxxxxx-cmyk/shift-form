@@ -918,6 +918,152 @@ $("testLinePush").addEventListener("click", async () => {
   }
 });
 
+/* ==========================================
+   選択したキャストへのLINE送信機能
+   テスト版：さくら（自分のLINE）のみ
+========================================== */
+
+const selectedLineFunction =
+  SUPABASE_URL + "/functions/v1/virgo-line-selected-test";
+
+// 既存の無効ボタンを送信ボタンに変更
+const oldSendButton = document.querySelector(".disabled-send");
+
+const selectedSendButton = document.createElement("button");
+selectedSendButton.id = "selectedLineSend";
+selectedSendButton.type = "button";
+selectedSendButton.className = "primary";
+selectedSendButton.style.width = "100%";
+selectedSendButton.style.marginTop = "12px";
+selectedSendButton.textContent = "選択したキャストにLINE送信";
+
+const selectedSendResult = document.createElement("p");
+selectedSendResult.id = "selectedSendResult";
+selectedSendResult.style.fontSize = "13px";
+selectedSendResult.style.lineHeight = "1.7";
+
+if (oldSendButton) {
+  oldSendButton.replaceWith(
+    selectedSendButton,
+    selectedSendResult
+  );
+}
+
+// テスト版の注意書きを追加
+const selectedSendNotice = document.createElement("p");
+selectedSendNotice.style.fontSize = "12px";
+selectedSendNotice.style.color = "#c72f40";
+selectedSendNotice.style.lineHeight = "1.7";
+selectedSendNotice.textContent =
+  "※ テスト中は「さくら」1人だけ送信可能です。" +
+  "ほかのキャストには送信されません。";
+
+selectedSendResult.after(selectedSendNotice);
+
+// LINE送信ボタン
+selectedSendButton.addEventListener("click", async () => {
+
+  const selected = casts.filter(c =>
+    selectedTargets.has(c.id)
+  );
+
+  if (selected.length === 0) {
+    alert("送信するキャストを選択してください。");
+    return;
+  }
+
+  if (selected.length !== 1 || selected[0].name !== "さくら") {
+    alert(
+      "現在はテスト中です。\n" +
+      "「さくら」1人だけを選択してください。"
+    );
+    return;
+  }
+
+  const cast = selected[0];
+
+  const message =
+    "【ヴァルゴ】シフト確認のお願い\n\n" +
+    "お疲れ様です！\n" +
+    "来週のシフトについて、確認をお願いします。\n\n" +
+    "シフトの提出・変更は、" +
+    "LINEのシフト提出フォームからお願いします！";
+
+  const confirmation =
+    "以下のキャストにLINEを送信します。\n\n" +
+    "送信先：" + cast.name + "\n" +
+    "送信人数：1人\n\n" +
+    "【送信内容】\n" +
+    message +
+    "\n\n送信してよろしいですか？";
+
+  if (!confirm(confirmation)) {
+    return;
+  }
+
+  selectedSendButton.disabled = true;
+  selectedSendButton.textContent = "送信中...";
+  selectedSendResult.textContent = "";
+
+  try {
+
+    const { data, error } =
+      await supabase.auth.getSession();
+
+    if (error || !data.session?.access_token) {
+      throw new Error(
+        "ログインの有効期限が切れました。再ログインしてください。"
+      );
+    }
+
+    const response = await fetch(selectedLineFunction, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_KEY,
+        "Authorization":
+          "Bearer " + data.session.access_token
+      },
+      body: JSON.stringify({
+        cast_ids: [cast.id]
+      })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || result.success !== true) {
+      throw new Error(
+        result.message ||
+        "LINE送信エラー（HTTP " + response.status + "）"
+      );
+    }
+
+    selectedSendResult.style.color = "#087a4a";
+    selectedSendResult.textContent =
+      "LINE送信成功！「" + cast.name +
+      "」に1通送信しました。";
+
+    selectedTargets.clear();
+    renderDays();
+    renderTargets();
+
+  } catch (error) {
+
+    selectedSendResult.style.color = "#c72f40";
+    selectedSendResult.textContent =
+      "送信失敗：" + error.message;
+
+    console.error("LINE selected send error:", error);
+
+  } finally {
+
+    selectedSendButton.disabled = false;
+    selectedSendButton.textContent =
+      "選択したキャストにLINE送信";
+
+  }
+});
+
 initialize();
 </script>
 </body>
