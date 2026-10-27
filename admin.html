@@ -1186,8 +1186,97 @@ $("lineSettingsReload").addEventListener(
 );
 
 // 出勤確認LINEプレビュー
+const TEST_CAST_ID = "7c588845-cbe0-4030-9104-ed4a44457e0e";
+let attendanceTestBusy = false;
+
+async function testSendAttendance(item, date, button, statusBox) {
+  if (
+    attendanceTestBusy ||
+    previewBusy ||
+    !currentUserId ||
+    item.castId !== TEST_CAST_ID ||
+    item.name !== "さくら" ||
+    item.sendable !== true
+  ) return;
+
+  const question =
+    "【出勤確認LINE・テスト送信】\n\n" +
+    "送信先：さくら（個人LINE）\n" +
+    "対象日：" + date + "\n" +
+    "出勤時間：" + item.shiftTime + "\n\n" +
+    "【送信する文章】\n" +
+    item.message + "\n\n" +
+    "実際にLINEを1通送信します。\n" +
+    "この日の二重送信防止履歴も作成されます。\n\n" +
+    "送信してよろしいですか？";
+
+  if (!confirm(question)) return;
+
+  attendanceTestBusy = true;
+  button.disabled = true;
+  button.textContent = "送信中...";
+  statusBox.style.color = "#667085";
+  statusBox.textContent = "さくらへ送信しています...";
+
+  try {
+    const session = await getAdminSession();
+
+    const response = await fetch(ATTENDANCE_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_KEY,
+        "Authorization": "Bearer " + session.access_token
+      },
+      body: JSON.stringify({
+        action: "testSend",
+        date,
+        castId: TEST_CAST_ID
+      })
+    });
+
+    const result = await response.json();
+
+    if (
+      !response.ok ||
+      result.success !== true ||
+      result.status !== "accepted"
+    ) {
+      throw new Error(
+        result.message ||
+        result.note ||
+        "LINE送信状況を確認できませんでした"
+      );
+    }
+
+    statusBox.style.color = "#087a4a";
+    statusBox.textContent =
+      "LINE API受付成功！\n" +
+      "対象：さくら\n" +
+      "対象日：" + date + "\n" +
+      "※ 実際に届いたかLINEで確認してください。";
+
+    button.textContent = "送信受付済み";
+    button.disabled = true;
+
+  } catch (error) {
+    statusBox.style.color = "#c72f40";
+    statusBox.textContent =
+      "送信結果を確認してください：" +
+      error.message + "\n" +
+      "※ すでに送信されている可能性があります。" +
+      "確認せずに再送しないでください。";
+
+    button.textContent = "送信状況を要確認";
+    button.disabled = true;
+
+  } finally {
+    attendanceTestBusy = false;
+  }
+}
+
 async function previewAttendance() {
-  if (previewBusy || !currentUserId) return;
+  if (previewBusy || attendanceTestBusy || !currentUserId) return;
 
   const date = $("attendancePreviewDate").value;
 
@@ -1246,7 +1335,7 @@ async function previewAttendance() {
       "対象日：" + result.date +
       " ／ 出勤予定：" + result.count + "人" +
       " ／ LINE送信可能：" + result.eligibleCount + "人" +
-      "\n※ LINEは送信していません。";
+      "\n※ プレビューではLINEは送信していません。";
 
     const container = $("attendancePreviewResults");
 
@@ -1279,6 +1368,37 @@ async function previewAttendance() {
       message.textContent = item.message;
 
       card.append(name, info, message);
+
+      if (
+        item.castId === TEST_CAST_ID &&
+        item.name === "さくら" &&
+        item.sendable === true
+      ) {
+        const testButton = document.createElement("button");
+        testButton.type = "button";
+        testButton.className = "primary";
+        testButton.textContent = "さくらにテスト送信";
+        testButton.style.marginTop = "12px";
+        testButton.style.width = "100%";
+
+        const testStatus = document.createElement("p");
+        testStatus.style.fontSize = "13px";
+        testStatus.style.whiteSpace = "pre-wrap";
+        testStatus.style.lineHeight = "1.7";
+        testStatus.setAttribute("role", "status");
+
+        testButton.addEventListener("click", () => {
+          testSendAttendance(
+            item,
+            result.date,
+            testButton,
+            testStatus
+          );
+        });
+
+        card.append(testButton, testStatus);
+      }
+
       container.appendChild(card);
     }
 
