@@ -69,8 +69,6 @@ input,textarea{border:1px solid #dce2eb;border-radius:8px;padding:10px;font-size
 [hidden]{display:none!important}
 @media(min-width:700px){.person-list{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:600px){.week strong{font-size:14px}}
-
-/* LINE連携申請 */
 .link-request{border:1px solid #e2e7ef;border-radius:11px;padding:14px;margin:10px 0;background:#fafbfc}
 .link-request strong{font-size:16px}
 .link-request p{font-size:13px;line-height:1.7;margin:7px 0;color:#596579;overflow-wrap:anywhere}
@@ -79,6 +77,10 @@ input,textarea{border:1px solid #dce2eb;border-radius:8px;padding:10px;font-size
 .link-approve{background:#087a4a;color:#fff;border-color:#087a4a}
 .link-reject{background:#fff;color:#b42d3b;border-color:#e8b9c0}
 .link-alert{font-size:13px;color:#b42d3b;font-weight:bold}
+.preview-item{border:1px solid #dce2eb;border-radius:10px;padding:14px;margin:10px 0;background:#fafbfc}
+.preview-item strong{font-size:15px}
+.preview-item small{display:block;color:#667085;margin:6px 0}
+.preview-message{white-space:pre-wrap;background:#f0f8f4;padding:12px;border-radius:8px;font-size:14px;line-height:1.7;margin-top:10px}
 </style>
 </head>
 <body>
@@ -140,7 +142,9 @@ input,textarea{border:1px solid #dce2eb;border-radius:8px;padding:10px;font-size
 
 <div class="section" id="lineLinkPanel">
 <h2>個人LINE連携申請 <span id="lineLinkCount" class="badge partial">確認中</span></h2>
-<p style="font-size:13px;color:#667085;line-height:1.7">キャスト本人を確認してから承認してください。承認後はキャストがLINEからシフトを提出できます。</p>
+<p style="font-size:13px;color:#667085;line-height:1.7">
+キャスト本人を確認してから承認してください。承認後はキャストがLINEからシフトを提出できます。
+</p>
 <div class="controls">
 <button type="button" id="reloadLineLinks">申請を更新 ↻</button>
 </div>
@@ -148,26 +152,21 @@ input,textarea{border:1px solid #dce2eb;border-radius:8px;padding:10px;font-size
 <div id="lineLinkList"></div>
 </div>
 
-<!-- 自動送信設定：新規追加 -->
 <div class="section" id="lineSendSettingsPanel">
 <h2>出勤確認・自動送信設定</h2>
-
 <p style="font-size:13px;color:#667085;line-height:1.7">
 毎日の出勤確認LINEを送る時間を日本時間で設定します。
 </p>
-
 <div class="controls" style="align-items:center">
 <label style="font-size:14px;font-weight:bold">
 <input type="checkbox" id="lineAutoEnabled">
 自動送信を有効にする
 </label>
 </div>
-
 <label for="lineAutoTime" style="display:block;margin:12px 0 8px;font-size:13px;font-weight:bold">
 毎日の送信時間
 </label>
 <input id="lineAutoTime" type="time" value="18:00" step="60">
-
 <div class="controls" style="margin-top:14px">
 <button id="lineSettingsSave" class="primary" type="button" disabled>
 設定を保存
@@ -176,15 +175,35 @@ input,textarea{border:1px solid #dce2eb;border-radius:8px;padding:10px;font-size
 設定を再読み込み
 </button>
 </div>
-
-<p id="lineSettingsStatus" role="status"
-style="font-size:13px;white-space:pre-wrap;line-height:1.7;color:#667085">
+<p id="lineSettingsStatus" role="status" style="font-size:13px;white-space:pre-wrap;line-height:1.7;color:#667085">
 設定を読み込み中...
 </p>
-
 <p style="font-size:12px;color:#667085;line-height:1.7">
 ※ 現段階では設定の保存のみです。LINE自動送信処理はまだ実装されていません。
 </p>
+</div>
+
+<!-- 出勤確認LINEプレビュー -->
+<div class="section" id="attendancePreviewPanel">
+<h2>出勤確認LINE・送信前プレビュー</h2>
+<p style="font-size:13px;color:#667085;line-height:1.7">
+指定した日の出勤キャストと送信予定の文章を確認できます。
+実際のLINE送信は行いません。
+</p>
+
+<label for="attendancePreviewDate" style="display:block;margin:12px 0 8px;font-size:13px;font-weight:bold">
+確認する日付
+</label>
+
+<div class="controls">
+<input type="date" id="attendancePreviewDate">
+<button type="button" class="primary" id="attendancePreviewButton">
+送信予定を確認
+</button>
+</div>
+
+<p id="attendancePreviewStatus" role="status" style="font-size:13px;color:#667085;line-height:1.7"></p>
+<div id="attendancePreviewResults"></div>
 </div>
 
 <div class="section">
@@ -203,8 +222,7 @@ style="font-size:13px;white-space:pre-wrap;line-height:1.7;color:#667085">
 <label for="bulkMessage" style="display:block;margin:18px 0 8px;font-size:13px;font-weight:bold">
 送信するLINEメッセージ
 </label>
-<textarea id="bulkMessage" rows="7" maxlength="5000"
-style="width:100%;resize:vertical"
+<textarea id="bulkMessage" rows="7" maxlength="5000" style="width:100%;resize:vertical"
 placeholder="ここにLINEで送る文章を入力してください"></textarea>
 
 <p id="messageLength" style="font-size:12px;color:#667085">0 / 5000文字</p>
@@ -213,8 +231,7 @@ placeholder="ここにLINEで送る文章を入力してください"></textarea
 選択したグループLINEに送信
 </button>
 
-<p id="bulkSendResult" role="status"
-style="font-size:13px;white-space:pre-wrap;line-height:1.8;overflow-wrap:anywhere"></p>
+<p id="bulkSendResult" role="status" style="font-size:13px;white-space:pre-wrap;line-height:1.8;overflow-wrap:anywhere"></p>
 
 <p style="font-size:12px;color:#667085;line-height:1.7">
 ※ 最大100人まで選択できます。<br>
@@ -258,41 +275,25 @@ style="font-size:13px;white-space:pre-wrap;line-height:1.8;overflow-wrap:anywher
 </div>
 
 <script type="module">
-import { createClient } from
-"https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
-const SUPABASE_URL =
-"https://krfzidbqoyhmkeylvneh.supabase.co";
+const SUPABASE_URL = "https://krfzidbqoyhmkeylvneh.supabase.co";
+const SUPABASE_KEY = "sb_publishable_4W4TXn_pvYcoLxJIwzbb2A_vRMvUbp5";
+const FUNCTION_URL = SUPABASE_URL + "/functions/v1/virgo-admin-data";
+const ATTENDANCE_URL = SUPABASE_URL + "/functions/v1/virgo-line-attendance";
+const GROUP_BULK_URL = SUPABASE_URL + "/functions/v1/virgo-line-group-bulk-send";
+const BULK_URL = SUPABASE_URL + "/functions/v1/virgo-line-bulk-send";
 
-const SUPABASE_KEY =
-"sb_publishable_4W4TXn_pvYcoLxJIwzbb2A_vRMvUbp5";
-
-const FUNCTION_URL =
-SUPABASE_URL + "/functions/v1/virgo-admin-data";
-
-const LINE_LINK_ADMIN_URL =
-SUPABASE_URL + "/functions/v1/virgo-admin-data";
-
-const GROUP_BULK_URL =
-SUPABASE_URL + "/functions/v1/virgo-line-group-bulk-send";
-
-const BULK_URL =
-SUPABASE_URL + "/functions/v1/virgo-line-bulk-send";
-
-const supabase = createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY,
-  {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: false
-    }
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: false
   }
-);
+});
 
 const $ = id => document.getElementById(id);
-const dayNames = ["月","火","水","木","金","土"];
+const dayNames = ["月", "火", "水", "木", "金", "土"];
 
 let weekOffset = 0;
 let onlyMissing = false;
@@ -308,24 +309,37 @@ let linkedGroups = new Map();
 let groupStatusReady = false;
 let lineLinkBusy = false;
 let lineLinkRequestNumber = 0;
+let lineSettingsBusy = false;
+let lineSettingsLoaded = false;
+let previewBusy = false;
+let previewRequestNumber = 0;
 
 const selectedTargets = new Set();
 
 function mondayOfWeek(offset = weekOffset) {
   const d = new Date();
-  d.setHours(12,0,0,0);
-  d.setDate(d.getDate() - (d.getDay()+6)%7 + offset*7);
+  d.setHours(12, 0, 0, 0);
+  d.setDate(d.getDate() - (d.getDay() + 6) % 7 + offset * 7);
   return d;
 }
 
 function dateKey(d) {
   return d.getFullYear() + "-" +
-    String(d.getMonth()+1).padStart(2,"0") + "-" +
-    String(d.getDate()).padStart(2,"0");
+    String(d.getMonth() + 1).padStart(2, "0") + "-" +
+    String(d.getDate()).padStart(2, "0");
 }
 
 function dateText(d) {
-  return (d.getMonth()+1) + "/" + d.getDate();
+  return (d.getMonth() + 1) + "/" + d.getDate();
+}
+
+function todayInJapan() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(new Date());
 }
 
 function weekKey() {
@@ -355,8 +369,49 @@ function setStatus(message) {
   $("syncStatus").textContent = message;
 }
 
+async function getAdminSession() {
+  const { data: { session }, error } =
+    await supabase.auth.getSession();
+
+  if (
+    error ||
+    !session?.access_token ||
+    session.user.id !== currentUserId
+  ) {
+    throw new Error("管理者として再ログインしてください");
+  }
+
+  return session;
+}
+
+async function callAdminFunction(payload) {
+  const session = await getAdminSession();
+
+  const response = await fetch(FUNCTION_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": SUPABASE_KEY,
+      "Authorization": "Bearer " + session.access_token
+    },
+    body: JSON.stringify(payload)
+  });
+
+  const result = await response.json();
+
+  if (!response.ok || result.success !== true) {
+    throw new Error(
+      result.message || "管理者操作に失敗しました"
+    );
+  }
+
+  return result;
+}
+
 function showLogin(message = "") {
   requestNumber++;
+  lineLinkRequestNumber++;
+  previewRequestNumber++;
   currentUserId = null;
   casts = [];
   loadedWeek = "";
@@ -365,17 +420,21 @@ function showLogin(message = "") {
   $("loginScreen").hidden = false;
   $("loginError").textContent = message;
   $("password").value = "";
-  lineLinkRequestNumber++;
   $("lineLinkList").replaceChildren();
 }
 
 function showApp(user) {
   currentUserId = user.id;
   selectedTargets.clear();
+
   $("accountEmail").textContent =
     "ログイン中：" + (user.email || "管理者");
+
   $("loginScreen").hidden = true;
   $("appScreen").hidden = false;
+
+  $("attendancePreviewDate").value = todayInJapan();
+
   render();
   loadRemote();
   loadLineLinks();
@@ -384,30 +443,35 @@ function showApp(user) {
 
 function renderTargets() {
   const selected = casts.filter(c => selectedTargets.has(c.id));
+
   $("targetCount").textContent = selected.length;
+
   $("targetNames").textContent = selected.length
     ? selected.map(c => c.name).join("、")
     : "まだ選択されていません";
+
   $("clearTargets").disabled = sending || selected.length === 0;
   $("bulkSendButton").disabled = sending;
+
   $("bulkSendButton").textContent = sending
     ? "送信中..."
-    : (sendMode === "group"
+    : sendMode === "group"
       ? "選択したグループLINEに送信"
-      : "選択した個人LINEに送信");
+      : "選択した個人LINEに送信";
+
   $("groupStatus").textContent = sendMode === "group"
-    ? (groupStatusReady
+    ? groupStatusReady
       ? "グループ連携済み：" + linkedGroups.size + "人（未連携は自動除外）"
-      : "グループ連携状況を確認中...")
+      : "グループ連携状況を確認中..."
     : "個人LINE宛てに送信します";
 }
 
 function getDayGroups() {
   const monday = mondayOfWeek();
 
-  return dayNames.map((name,index) => {
+  return dayNames.map((name, index) => {
     const date = new Date(monday);
-    date.setDate(date.getDate()+index);
+    date.setDate(date.getDate() + index);
 
     const work = [];
     const off = [];
@@ -429,7 +493,7 @@ function getDayGroups() {
       }
     }
 
-    return {name,date,work,off,missing};
+    return { name, date, work, off, missing };
   });
 }
 
@@ -442,7 +506,7 @@ function renderDays() {
 
   const groups = getDayGroups();
 
-  groups.forEach((group,index) => {
+  groups.forEach((group, index) => {
     const button = document.createElement("button");
     button.type = "button";
     button.className =
@@ -466,9 +530,9 @@ function renderDays() {
       "休み " + group.off.length +
       " / 未 " + group.missing.length;
 
-    button.append(name,date,count,other);
+    button.append(name, date, count, other);
 
-    button.addEventListener("click",() => {
+    button.addEventListener("click", () => {
       if (sending) return;
       selectedDay = index;
       selectedStatus = "work";
@@ -491,9 +555,9 @@ function renderDays() {
   tabs.className = "status-tabs";
 
   const statuses = [
-    {key:"work",label:"出勤",count:group.work.length},
-    {key:"off",label:"休み",count:group.off.length},
-    {key:"missing",label:"未提出",count:group.missing.length}
+    { key: "work", label: "出勤", count: group.work.length },
+    { key: "off", label: "休み", count: group.off.length },
+    { key: "missing", label: "未提出", count: group.missing.length }
   ];
 
   statuses.forEach(status => {
@@ -510,9 +574,9 @@ function renderDays() {
     count.className = "tab-count";
     count.textContent = status.count + "人";
 
-    button.append(label,count);
+    button.append(label, count);
 
-    button.addEventListener("click",() => {
+    button.addEventListener("click", () => {
       if (sending) return;
       selectedStatus = status.key;
       renderDays();
@@ -532,7 +596,7 @@ function renderDays() {
   selectAll.textContent = "表示中の全員を選択";
   selectAll.disabled = sending;
 
-  selectAll.addEventListener("click",() => {
+  selectAll.addEventListener("click", () => {
     people.forEach(p => selectedTargets.add(p.id));
     renderDays();
     renderTargets();
@@ -542,13 +606,13 @@ function renderDays() {
   deselectAll.textContent = "表示中の選択を解除";
   deselectAll.disabled = sending;
 
-  deselectAll.addEventListener("click",() => {
+  deselectAll.addEventListener("click", () => {
     people.forEach(p => selectedTargets.delete(p.id));
     renderDays();
     renderTargets();
   });
 
-  controls.append(selectAll,deselectAll);
+  controls.append(selectAll, deselectAll);
   details.appendChild(controls);
 
   const list = document.createElement("div");
@@ -575,20 +639,21 @@ function renderDays() {
       item.classList.add("selected");
     }
 
-    checkbox.addEventListener("change",() => {
+    checkbox.addEventListener("change", () => {
       if (checkbox.checked) {
         selectedTargets.add(person.id);
       } else {
         selectedTargets.delete(person.id);
       }
 
-      item.classList.toggle("selected",checkbox.checked);
+      item.classList.toggle("selected", checkbox.checked);
       renderTargets();
     });
 
     item.appendChild(checkbox);
 
     const info = document.createElement("div");
+
     const name = document.createElement("strong");
     name.textContent = person.name;
     info.appendChild(name);
@@ -606,8 +671,10 @@ function renderDays() {
         : linkedGroups.has(person.id)
           ? "グループ連携済み"
           : "グループ未連携";
+
       status.style.color = linkedGroups.has(person.id)
         ? "#087a4a" : "#8b5e00";
+
       info.appendChild(status);
     }
 
@@ -621,7 +688,7 @@ function renderDays() {
 function render() {
   const monday = mondayOfWeek();
   const saturday = new Date(monday);
-  saturday.setDate(saturday.getDate()+5);
+  saturday.setDate(saturday.getDate() + 5);
 
   $("weekTitle").textContent =
     dateText(monday) + " 〜 " + dateText(saturday);
@@ -630,7 +697,7 @@ function render() {
 
   $("total").textContent = casts.length;
   $("done").textContent = completed;
-  $("missing").textContent = casts.length-completed;
+  $("missing").textContent = casts.length - completed;
 
   renderDays();
   renderTargets();
@@ -668,7 +735,7 @@ function render() {
         ? "一部入力（" + filled + "/6）"
         : "未提出";
 
-    row.append(name,badge);
+    row.append(name, badge);
     list.appendChild(row);
   });
 
@@ -684,6 +751,7 @@ function render() {
 
 function changeWeek(n) {
   if (sending) return;
+
   weekOffset += n;
   requestNumber++;
   casts = [];
@@ -691,12 +759,14 @@ function changeWeek(n) {
   selectedDay = 0;
   selectedStatus = "work";
   selectedTargets.clear();
+
   render();
   loadRemote();
 }
 
 function goThisWeek() {
   if (sending) return;
+
   weekOffset = 0;
   requestNumber++;
   casts = [];
@@ -704,19 +774,20 @@ function goThisWeek() {
   selectedDay = 0;
   selectedStatus = "work";
   selectedTargets.clear();
+
   render();
   loadRemote();
 }
 
-async function fetchWeekData(week,token) {
-  const response = await fetch(FUNCTION_URL,{
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      "apikey":SUPABASE_KEY,
-      "Authorization":"Bearer "+token
+async function fetchWeekData(week, token) {
+  const response = await fetch(FUNCTION_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": SUPABASE_KEY,
+      "Authorization": "Bearer " + token
     },
-    body:JSON.stringify({week})
+    body: JSON.stringify({ week })
   });
 
   const result = await response.json();
@@ -746,13 +817,7 @@ async function loadRemote() {
   setStatus("Supabaseから読み込み中...");
 
   try {
-    const {data:{session},error} =
-      await supabase.auth.getSession();
-
-    if (error || !session?.access_token) {
-      showLogin("ログインの有効期限が切れました");
-      return;
-    }
+    const session = await getAdminSession();
 
     if (session.user.id !== userId) return;
 
@@ -775,17 +840,20 @@ async function loadRemote() {
         Array.isArray(c.days)
       )
       .map(c => ({
-        id:c.id,
-        name:c.name,
-        days:c.days.slice(0,6),
-        submitted:c.submitted === true
+        id: c.id,
+        name: c.name,
+        days: c.days.slice(0, 6),
+        submitted: c.submitted === true
       }));
 
     loadedWeek = week;
 
-    if (sendMode === "group") await loadGroupStatus();
+    if (sendMode === "group") {
+      await loadGroupStatus();
+    }
 
     const validIds = new Set(casts.map(c => c.id));
+
     for (const selectedId of selectedTargets) {
       if (!validIds.has(selectedId)) {
         selectedTargets.delete(selectedId);
@@ -802,30 +870,25 @@ async function loadRemote() {
 
   } catch (error) {
     if (id !== requestNumber) return;
-
     setStatus("読み込みエラー：" + error.message);
     console.error(error);
   }
 }
 
-// グループ連携状況の取得
 async function loadGroupStatus() {
   groupStatusReady = false;
 
   try {
-    const {data:{session}} =
-      await supabase.auth.getSession();
-
-    if (!session?.access_token) return;
+    const session = await getAdminSession();
 
     const response = await fetch(GROUP_BULK_URL, {
-      method:"POST",
-      headers:{
-        "Content-Type":"application/json",
-        "apikey":SUPABASE_KEY,
-        "Authorization":"Bearer " + session.access_token
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_KEY,
+        "Authorization": "Bearer " + session.access_token
       },
-      body:JSON.stringify({action:"status"})
+      body: JSON.stringify({ action: "status" })
     });
 
     const result = await response.json();
@@ -845,39 +908,37 @@ async function loadGroupStatus() {
 
     groupStatusReady = true;
 
-  } catch(e) {
-    console.error(e);
+  } catch (error) {
+    console.error(error);
     $("groupStatus").textContent =
       "グループ連携状況の取得に失敗しました：" +
-      e.message;
+      error.message;
   }
 }
 
-document.querySelectorAll(
-  'input[name="sendMode"]'
-).forEach(radio => {
-  radio.addEventListener("change",async () => {
-    if (sending) return;
+document.querySelectorAll('input[name="sendMode"]')
+  .forEach(radio => {
+    radio.addEventListener("change", async () => {
+      if (sending) return;
 
-    sendMode = document.querySelector(
-      'input[name="sendMode"]:checked'
-    ).value;
+      sendMode = document.querySelector(
+        'input[name="sendMode"]:checked'
+      ).value;
 
-    if (sendMode === "group") {
-      await loadGroupStatus();
-    }
+      if (sendMode === "group") {
+        await loadGroupStatus();
+      }
 
-    render();
+      render();
+    });
   });
-});
 
-// LINE一括送信
-$("bulkMessage").addEventListener("input",() => {
+$("bulkMessage").addEventListener("input", () => {
   $("messageLength").textContent =
     $("bulkMessage").value.length + " / 5000文字";
 });
 
-$("bulkSendButton").addEventListener("click",async() => {
+$("bulkSendButton").addEventListener("click", async () => {
   if (sending) return;
 
   const selected = casts.filter(c =>
@@ -902,17 +963,15 @@ $("bulkSendButton").addEventListener("click",async() => {
   }
 
   if (sendMode === "group" && !groupStatusReady) {
-    alert(
-      "グループ連携状況を取得できていません。" +
-      "更新してから試してください。"
-    );
+    alert("グループ連携状況を取得できていません。");
     return;
   }
 
   const names = selected.map(c =>
     c.name + (
       sendMode === "group" && !linkedGroups.has(c.id)
-        ? "（未連携）" : ""
+        ? "（未連携）"
+        : ""
     )
   ).join("、");
 
@@ -940,30 +999,23 @@ $("bulkSendButton").addEventListener("click",async() => {
   button.textContent = "送信中...";
   resultBox.style.color = "#202b3a";
   resultBox.textContent =
-    "送信処理中です。" +
-    "完了するまで画面を閉じないでください。";
+    "送信処理中です。完了するまで画面を閉じないでください。";
 
   try {
-    const {data,error} =
-      await supabase.auth.getSession();
-
-    if (error || !data.session?.access_token) {
-      throw new Error("再ログインしてください。");
-    }
+    const session = await getAdminSession();
 
     const response = await fetch(
       sendMode === "group" ? GROUP_BULK_URL : BULK_URL,
       {
-        method:"POST",
-        headers:{
-          "Content-Type":"application/json",
-          "apikey":SUPABASE_KEY,
-          "Authorization":
-            "Bearer "+data.session.access_token
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_KEY,
+          "Authorization": "Bearer " + session.access_token
         },
-        body:JSON.stringify({
-          action:"send",
-          cast_ids:selected.map(c => c.id),
+        body: JSON.stringify({
+          action: "send",
+          cast_ids: selected.map(c => c.id),
           message
         })
       }
@@ -981,12 +1033,12 @@ $("bulkSendButton").addEventListener("click",async() => {
     }
 
     const labels = {
-      accepted:"LINE API受付成功",
-      unlinked:"LINE未連携",
-      duplicate:"重複のため除外",
-      not_found:"対象なし",
-      ambiguous:"グループ登録が複数あり要確認",
-      failed:"送信失敗"
+      accepted: "LINE API受付成功",
+      unlinked: "LINE未連携",
+      duplicate: "重複のため除外",
+      not_found: "対象なし",
+      ambiguous: "グループ登録が複数あり要確認",
+      failed: "送信失敗"
     };
 
     resultBox.style.color =
@@ -1002,7 +1054,6 @@ $("bulkSendButton").addEventListener("click",async() => {
         (labels[r.status] || r.status)
       ).join("\n");
 
-    // 送信受付成功したキャストのみ選択解除
     for (const r of result.results || []) {
       if (r.status === "accepted") {
         selectedTargets.delete(r.id);
@@ -1013,8 +1064,7 @@ $("bulkSendButton").addEventListener("click",async() => {
     resultBox.style.color = "#c72f40";
     resultBox.textContent =
       "送信エラー：" + error.message + "\n\n" +
-      "※ 通信エラー時は、すでに送信されている" +
-      "可能性があります。" +
+      "※ 通信エラー時はすでに送信されている可能性があります。" +
       "確認せずに再送しないでください。";
 
   } finally {
@@ -1029,68 +1079,32 @@ $("bulkSendButton").addEventListener("click",async() => {
   }
 });
 
-// 出勤確認の自動送信設定
-let lineSettingsBusy = false;
-let lineSettingsLoaded = false;
-
-async function callLineSettings(payload) {
-  const {data:{session},error} =
-    await supabase.auth.getSession();
-
-  if (
-    error ||
-    !session?.access_token ||
-    session.user.id !== currentUserId
-  ) {
-    throw new Error("管理者として再ログインしてください");
-  }
-
-  const response = await fetch(FUNCTION_URL, {
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      "apikey":SUPABASE_KEY,
-      "Authorization":"Bearer " + session.access_token
-    },
-    body:JSON.stringify(payload)
-  });
-
-  let result;
-  try {
-    result = await response.json();
-  } catch {
-    throw new Error("サーバーの応答を読み取れません");
-  }
-
-  if (!response.ok || result.success !== true) {
-    throw new Error(
-      result.message || "送信設定の操作に失敗しました"
-    );
-  }
-
-  return result;
-}
-
+// 自動送信設定
 async function loadLineSendSettings() {
   if (!currentUserId || lineSettingsBusy) return;
 
   lineSettingsBusy = true;
   lineSettingsLoaded = false;
+
   $("lineSettingsSave").disabled = true;
   $("lineSettingsReload").disabled = true;
-  $("lineSettingsStatus").textContent =
-    "設定を読み込み中...";
+  $("lineSettingsStatus").textContent = "設定を読み込み中...";
 
   try {
-    const result = await callLineSettings({
-      action:"getLineSendSettings"
+    const userId = currentUserId;
+
+    const result = await callAdminFunction({
+      action: "getLineSendSettings"
     });
 
-    if (!currentUserId || $("appScreen").hidden) return;
+    if (userId !== currentUserId) return;
 
     $("lineAutoEnabled").checked =
       result.settings.enabled === true;
-    $("lineAutoTime").value = result.settings.sendTime;
+
+    $("lineAutoTime").value =
+      result.settings.sendTime;
+
     lineSettingsLoaded = true;
 
     $("lineSettingsStatus").textContent =
@@ -1134,13 +1148,14 @@ async function saveLineSendSettings() {
   )) return;
 
   lineSettingsBusy = true;
+
   $("lineSettingsSave").disabled = true;
   $("lineSettingsReload").disabled = true;
   $("lineSettingsStatus").textContent = "保存中...";
 
   try {
-    const result = await callLineSettings({
-      action:"saveLineSendSettings",
+    const result = await callAdminFunction({
+      action: "saveLineSendSettings",
       enabled,
       sendTime
     });
@@ -1165,61 +1180,167 @@ async function saveLineSendSettings() {
 $("lineSettingsSave").addEventListener(
   "click", saveLineSendSettings
 );
+
 $("lineSettingsReload").addEventListener(
   "click", loadLineSendSettings
 );
 
-// 管理者のLINE連携申請を取得・審査する
-async function callLineLinkAdmin(payload) {
-  const {data:{session},error} = await supabase.auth.getSession();
-  if (error || !session?.access_token || session.user.id !== currentUserId) {
-    throw new Error("管理者として再ログインしてください");
+// 出勤確認LINEプレビュー
+async function previewAttendance() {
+  if (previewBusy || !currentUserId) return;
+
+  const date = $("attendancePreviewDate").value;
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    alert("確認する日付を選択してください");
+    return;
   }
 
-  const response = await fetch(LINE_LINK_ADMIN_URL, {
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      "apikey":SUPABASE_KEY,
-      "Authorization":"Bearer " + session.access_token
-    },
-    body:JSON.stringify(payload)
-  });
+  previewBusy = true;
+  const number = ++previewRequestNumber;
+  const userId = currentUserId;
 
-  const result = await response.json();
-  if (!response.ok || result.success !== true) {
-    throw new Error(result.message || "申請処理に失敗しました");
+  $("attendancePreviewButton").disabled = true;
+  $("attendancePreviewStatus").textContent =
+    "送信予定を確認しています...";
+  $("attendancePreviewResults").replaceChildren();
+
+  try {
+    const session = await getAdminSession();
+
+    const response = await fetch(ATTENDANCE_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_KEY,
+        "Authorization": "Bearer " + session.access_token
+      },
+      body: JSON.stringify({
+        action: "preview",
+        date
+      })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || result.success !== true) {
+      throw new Error(
+        result.message || "プレビューの取得に失敗しました"
+      );
+    }
+
+    if (
+      number !== previewRequestNumber ||
+      userId !== currentUserId
+    ) return;
+
+    if (
+      result.mode !== "preview" ||
+      result.sent !== false ||
+      !Array.isArray(result.items)
+    ) {
+      throw new Error("プレビューデータの形式が不正です");
+    }
+
+    $("attendancePreviewStatus").textContent =
+      "対象日：" + result.date +
+      " ／ 出勤予定：" + result.count + "人" +
+      " ／ LINE送信可能：" + result.eligibleCount + "人" +
+      "\n※ LINEは送信していません。";
+
+    const container = $("attendancePreviewResults");
+
+    if (result.items.length === 0) {
+      const empty = document.createElement("p");
+      empty.className = "empty";
+      empty.textContent = "この日の出勤予定はありません。";
+      container.appendChild(empty);
+      return;
+    }
+
+    for (const item of result.items) {
+      const card = document.createElement("div");
+      card.className = "preview-item";
+
+      const name = document.createElement("strong");
+      name.textContent = item.name;
+
+      const info = document.createElement("small");
+      info.textContent =
+        "出勤 " + item.shiftTime +
+        " ／ " + (
+          item.lineLinked
+            ? "個人LINE連携済み"
+            : "個人LINE未連携（送信対象外）"
+        );
+
+      const message = document.createElement("div");
+      message.className = "preview-message";
+      message.textContent = item.message;
+
+      card.append(name, info, message);
+      container.appendChild(card);
+    }
+
+  } catch (error) {
+    if (
+      number === previewRequestNumber &&
+      userId === currentUserId
+    ) {
+      $("attendancePreviewStatus").textContent =
+        "プレビューエラー：" + error.message;
+    }
+
+  } finally {
+    previewBusy = false;
+    $("attendancePreviewButton").disabled = false;
   }
-
-  return result;
 }
 
+$("attendancePreviewButton").addEventListener(
+  "click", previewAttendance
+);
+
+// LINE連携申請
 async function loadLineLinks() {
   if (!currentUserId || $("appScreen").hidden || lineLinkBusy) return;
+
   const number = ++lineLinkRequestNumber;
   const userId = currentUserId;
+
   $("lineLinkMessage").textContent = "申請を確認しています...";
   $("reloadLineLinks").disabled = true;
 
   try {
-    const result = await callLineLinkAdmin({
-      action:"listLineLinks"
+    const result = await callAdminFunction({
+      action: "listLineLinks"
     });
 
-    if (number !== lineLinkRequestNumber || userId !== currentUserId) return;
+    if (
+      number !== lineLinkRequestNumber ||
+      userId !== currentUserId
+    ) return;
+
     if (!Array.isArray(result.requests)) {
       throw new Error("申請データが不正です");
     }
 
     renderLineLinks(result.requests);
-    $("lineLinkMessage").textContent = result.requests.length
-      ? "承認前に必ず本人確認をしてください。"
-      : "現在、承認待ちの申請はありません。";
+
+    $("lineLinkMessage").textContent =
+      result.requests.length
+        ? "承認前に必ず本人確認をしてください。"
+        : "現在、承認待ちの申請はありません。";
 
   } catch (error) {
-    if (number !== lineLinkRequestNumber || userId !== currentUserId) return;
+    if (
+      number !== lineLinkRequestNumber ||
+      userId !== currentUserId
+    ) return;
+
     $("lineLinkMessage").textContent =
       "取得エラー：" + error.message;
+
     $("lineLinkCount").textContent = "取得失敗";
 
   } finally {
@@ -1232,6 +1353,7 @@ async function loadLineLinks() {
 function renderLineLinks(requests) {
   const list = $("lineLinkList");
   list.replaceChildren();
+
   $("lineLinkCount").textContent =
     "承認待ち " + requests.length + "件";
 
@@ -1251,7 +1373,7 @@ function renderLineLinks(requests) {
         ? new Date(request.createdAt).toLocaleString("ja-JP")
         : "不明");
 
-    item.append(name,info);
+    item.append(name, info);
 
     const warning = document.createElement("p");
     warning.className = "link-alert";
@@ -1286,13 +1408,14 @@ function renderLineLinks(requests) {
     reject.textContent = "却下する";
 
     approve.addEventListener("click", () =>
-      reviewLineLink(request,"approve")
-    );
-    reject.addEventListener("click", () =>
-      reviewLineLink(request,"reject")
+      reviewLineLink(request, "approve")
     );
 
-    actions.append(approve,reject);
+    reject.addEventListener("click", () =>
+      reviewLineLink(request, "reject")
+    );
+
+    actions.append(approve, reject);
     item.appendChild(actions);
     list.appendChild(item);
   }
@@ -1316,6 +1439,7 @@ async function reviewLineLink(request, decision) {
 
   lineLinkBusy = true;
   lineLinkRequestNumber++;
+
   $("reloadLineLinks").disabled = true;
 
   $("lineLinkList").querySelectorAll("button")
@@ -1324,9 +1448,9 @@ async function reviewLineLink(request, decision) {
   $("lineLinkMessage").textContent = "処理中です...";
 
   try {
-    const result = await callLineLinkAdmin({
-      action:"reviewLineLink",
-      requestId:request.id,
+    const result = await callAdminFunction({
+      action: "reviewLineLink",
+      requestId: request.id,
       decision
     });
 
@@ -1346,11 +1470,11 @@ async function reviewLineLink(request, decision) {
 }
 
 $("reloadLineLinks").addEventListener(
-  "click",loadLineLinks
+  "click", loadLineLinks
 );
 
 // ログイン
-$("loginForm").addEventListener("submit",async event => {
+$("loginForm").addEventListener("submit", async event => {
   event.preventDefault();
 
   const button = $("loginButton");
@@ -1359,16 +1483,14 @@ $("loginForm").addEventListener("submit",async event => {
   $("loginError").textContent = "";
 
   try {
-    const {data,error} =
+    const { data, error } =
       await supabase.auth.signInWithPassword({
-        email:$("email").value.trim(),
-        password:$("password").value
+        email: $("email").value.trim(),
+        password: $("password").value
       });
 
     if (error) throw error;
-    if (!data.user) {
-      throw new Error("ログイン失敗");
-    }
+    if (!data.user) throw new Error("ログイン失敗");
 
     showApp(data.user);
 
@@ -1384,14 +1506,14 @@ $("loginForm").addEventListener("submit",async event => {
 });
 
 // ログアウト
-$("logoutButton").addEventListener("click",async() => {
+$("logoutButton").addEventListener("click", async () => {
   if (sending) return;
 
   const button = $("logoutButton");
   button.disabled = true;
 
   try {
-    const {error} = await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
     if (error) throw error;
     showLogin();
 
@@ -1403,30 +1525,30 @@ $("logoutButton").addEventListener("click",async() => {
   }
 });
 
-// 各種操作
-$("prevWeek").addEventListener("click",() => changeWeek(-1));
-$("nextWeek").addEventListener("click",() => changeWeek(1));
-$("thisWeek").addEventListener("click",goThisWeek);
-$("refreshButton").addEventListener("click",loadRemote);
-$("refreshButton").addEventListener("click",loadLineLinks);
+// 画面操作
+$("prevWeek").addEventListener("click", () => changeWeek(-1));
+$("nextWeek").addEventListener("click", () => changeWeek(1));
+$("thisWeek").addEventListener("click", goThisWeek);
+$("refreshButton").addEventListener("click", loadRemote);
+$("refreshButton").addEventListener("click", loadLineLinks);
 
-$("filter").addEventListener("click",() => {
+$("filter").addEventListener("click", () => {
   onlyMissing = !onlyMissing;
   $("filter").textContent =
     onlyMissing ? "全員表示" : "未提出のみ";
   render();
 });
 
-$("search").addEventListener("input",render);
+$("search").addEventListener("input", render);
 
-$("clearTargets").addEventListener("click",() => {
+$("clearTargets").addEventListener("click", () => {
   if (sending) return;
   selectedTargets.clear();
   renderDays();
   renderTargets();
 });
 
-window.addEventListener("pageshow",() => {
+window.addEventListener("pageshow", () => {
   if (currentUserId) loadRemote();
 });
 
@@ -1439,12 +1561,12 @@ setInterval(() => {
     loadRemote();
     loadLineLinks();
   }
-},30000);
+}, 30000);
 
 // 初期化
 async function initialize() {
   try {
-    const {data,error} =
+    const { data, error } =
       await supabase.auth.getSession();
 
     if (error) throw error;
@@ -1456,9 +1578,7 @@ async function initialize() {
     }
 
   } catch (error) {
-    showLogin(
-      "ログイン状態を確認できませんでした"
-    );
+    showLogin("ログイン状態を確認できませんでした");
   }
 }
 
