@@ -9,9 +9,7 @@
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
 <style>
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
@@ -29,9 +27,7 @@ body {
   border-radius: 18px;
 }
 
-h2 {
-  text-align: center;
-}
+h2 { text-align: center; }
 
 .status {
   padding: 14px;
@@ -39,6 +35,7 @@ h2 {
   border-radius: 10px;
   text-align: center;
   margin-bottom: 16px;
+  line-height: 1.6;
 }
 
 .notice {
@@ -74,7 +71,7 @@ h2 {
   margin-bottom: 8px;
 }
 
-select {
+select, input {
   width: 100%;
   padding: 13px;
   font-size: 16px;
@@ -106,7 +103,13 @@ button:disabled {
   cursor: not-allowed;
 }
 
-#result {
+.secondary-button {
+  background: #eef1f4;
+  color: #333;
+  margin-top: 12px;
+}
+
+#result, #linkResult {
   white-space: pre-line;
   line-height: 1.8;
   font-size: 14px;
@@ -121,6 +124,48 @@ button:disabled {
   color: #d33b48;
   font-weight: bold;
 }
+
+.hidden { display: none !important; }
+
+.link-box {
+  padding: 18px;
+  background: #f7f9fb;
+  border-radius: 14px;
+}
+
+.link-box h3 {
+  margin-top: 0;
+  text-align: center;
+}
+
+.link-box p {
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.link-box label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.pending {
+  background: #fff8e5;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  line-height: 1.8;
+}
+
+.pending strong {
+  color: #996600;
+}
+
+.small {
+  font-size: 12px;
+  color: #777;
+  line-height: 1.6;
+}
 </style>
 </head>
 
@@ -133,19 +178,73 @@ button:disabled {
     LINE認証を確認中...
   </div>
 
-  <div class="notice">
-    翌週のシフトは水曜日までに提出をお願いします。
-  </div>
+  <section id="linkSection" class="hidden">
+    <div class="link-box">
+      <h3>個人LINE連携</h3>
+      <p>
+        初回のみ、お店に登録している
+        キャスト名を入力してください。
+      </p>
 
-  <div id="savedNotice" class="saved-notice"></div>
+      <label for="castName">キャスト名</label>
+      <input
+        id="castName"
+        type="text"
+        maxlength="60"
+        autocomplete="off"
+        placeholder="例：あおい"
+      >
 
-  <div id="week"></div>
+      <button id="linkButton" type="button">
+        LINE連携を申請する
+      </button>
 
-  <button id="submit" disabled>
-    読み込み中...
-  </button>
+      <p class="small">
+        申請後、管理者が本人確認を行います。
+        承認後にシフト提出が可能になります。
+      </p>
 
-  <p id="result" role="status" aria-live="polite"></p>
+      <p id="linkResult" role="status" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <section id="pendingSection" class="hidden">
+    <div class="pending">
+      <strong>LINE連携の承認待ちです</strong>
+      <p>
+        申請したキャスト名：<br>
+        <strong id="pendingName"></strong>
+      </p>
+      <p>
+        管理者の承認後に
+        シフト提出ができるようになります。
+      </p>
+    </div>
+
+    <button
+      id="checkButton"
+      type="button"
+      class="secondary-button"
+    >
+      承認状況を確認する
+    </button>
+  </section>
+
+  <section id="shiftSection" class="hidden">
+    <div class="notice">
+      翌週のシフトは水曜日までに提出をお願いします。
+    </div>
+
+    <div id="savedNotice" class="saved-notice"></div>
+
+    <div id="week"></div>
+
+    <button id="submit" disabled>
+      読み込み中...
+    </button>
+
+    <p id="result" role="status" aria-live="polite"></p>
+  </section>
 </div>
 
 <script>
@@ -161,6 +260,15 @@ const API_URL =
   SUPABASE_URL + "/functions/v1/virgo-line-shift";
 
 const statusEl = document.getElementById("status");
+const linkSection = document.getElementById("linkSection");
+const pendingSection = document.getElementById("pendingSection");
+const shiftSection = document.getElementById("shiftSection");
+const castNameInput = document.getElementById("castName");
+const linkButton = document.getElementById("linkButton");
+const linkResult = document.getElementById("linkResult");
+const pendingName = document.getElementById("pendingName");
+const checkButton = document.getElementById("checkButton");
+
 const weekEl = document.getElementById("week");
 const submitBtn = document.getElementById("submit");
 const resultEl = document.getElementById("result");
@@ -186,6 +294,8 @@ let sending = false;
 let ready = false;
 let hasSavedShifts = false;
 let loadedValues = [];
+let checking = false;
+let requesting = false;
 
 function formatDate(date) {
   const y = date.getFullYear();
@@ -250,6 +360,16 @@ function makeWeek() {
   }
 }
 
+function showSection(section) {
+  linkSection.classList.add("hidden");
+  pendingSection.classList.add("hidden");
+  shiftSection.classList.add("hidden");
+
+  if (section) {
+    section.classList.remove("hidden");
+  }
+}
+
 function setControlsEnabled(enabled) {
   ready = enabled;
 
@@ -280,6 +400,23 @@ function getShifts() {
 function showResult(message, success) {
   resultEl.textContent = message;
   resultEl.className = success ? "success" : "error";
+}
+
+function showLinkResult(message, success) {
+  linkResult.textContent = message;
+  linkResult.className = success ? "success" : "error";
+}
+
+function getIdToken() {
+  const idToken = liff.getIDToken();
+
+  if (!idToken) {
+    throw new Error(
+      "LINE認証情報を取得できませんでした"
+    );
+  }
+
+  return idToken;
 }
 
 async function callApi(body) {
@@ -316,13 +453,7 @@ async function callApi(body) {
 }
 
 async function loadPreviousShifts() {
-  const idToken = liff.getIDToken();
-
-  if (!idToken) {
-    throw new Error(
-      "LINE認証情報を取得できませんでした"
-    );
-  }
+  const idToken = getIdToken();
 
   statusEl.textContent =
     "前回のシフトを読み込んでいます...";
@@ -382,12 +513,150 @@ async function loadPreviousShifts() {
         "保存済みのシフトを一部読み込みました。" +
         "未入力の日を選択してから提出してください。";
     }
-
   } else {
     savedNoticeEl.style.display = "none";
   }
 
   return result;
+}
+
+async function openShiftScreen() {
+  showSection(null);
+  setControlsEnabled(false);
+
+  const result = await loadPreviousShifts();
+
+  statusEl.textContent =
+    "LINE認証済み：" + result.castName;
+
+  showSection(shiftSection);
+  setControlsEnabled(true);
+}
+
+async function checkLinkStatus() {
+  if (checking) return;
+
+  checking = true;
+  checkButton.disabled = true;
+  checkButton.textContent = "確認中...";
+
+  try {
+    const result = await callApi({
+      action: "link_status",
+      idToken: getIdToken()
+    });
+
+    if (result.linkStatus === "linked") {
+      await openShiftScreen();
+      return;
+    }
+
+    setControlsEnabled(false);
+
+    if (result.linkStatus === "pending") {
+      pendingName.textContent =
+        result.requestedName || "確認中";
+
+      statusEl.textContent =
+        "LINE連携：管理者の承認待ち";
+
+      showSection(pendingSection);
+      return;
+    }
+
+    if (result.linkStatus === "unlinked") {
+      statusEl.textContent =
+        "初回のLINE連携が必要です";
+
+      showSection(linkSection);
+      return;
+    }
+
+    throw new Error(
+      "LINE連携状態を確認できませんでした"
+    );
+
+  } catch (error) {
+    statusEl.textContent =
+      "確認エラー：" + error.message;
+
+    showSection(pendingSection);
+    pendingName.textContent = "確認できません";
+
+  } finally {
+    checking = false;
+    checkButton.disabled = false;
+    checkButton.textContent =
+      "承認状況を確認する";
+  }
+}
+
+async function requestLink() {
+  if (requesting) return;
+
+  const castName = castNameInput.value
+    .trim()
+    .normalize("NFKC");
+
+  if (!castName || castName.length > 60) {
+    showLinkResult(
+      "キャスト名を正しく入力してください。",
+      false
+    );
+    return;
+  }
+
+  if (!confirm(
+    "以下のキャスト名でLINE連携を申請しますか？\n\n" +
+    castName
+  )) {
+    return;
+  }
+
+  requesting = true;
+  linkButton.disabled = true;
+  linkButton.textContent = "申請中...";
+  showLinkResult("申請しています...", true);
+
+  try {
+    const result = await callApi({
+      action: "link_request",
+      idToken: getIdToken(),
+      castName
+    });
+
+    if (result.linkStatus === "linked") {
+      await openShiftScreen();
+      return;
+    }
+
+    if (result.linkStatus !== "pending") {
+      throw new Error(
+        "申請状況を確認できませんでした"
+      );
+    }
+
+    pendingName.textContent =
+      result.requestedName || castName;
+
+    statusEl.textContent =
+      "LINE連携：管理者の承認待ち";
+
+    showSection(pendingSection);
+
+  } catch (error) {
+    showLinkResult(
+      "LINE連携を申請できませんでした。\n" +
+      error.message,
+      false
+    );
+
+  } finally {
+    requesting = false;
+    linkButton.disabled = false;
+    linkButton.textContent =
+      "LINE連携を申請する";
+  }
 }
 
 async function start() {
@@ -414,27 +683,15 @@ async function start() {
       return;
     }
 
-    const profile = await liff.getProfile();
+    getIdToken();
 
-    if (!liff.getIDToken()) {
-      throw new Error(
-        "LINE IDトークンを取得できません"
-      );
-    }
-
-    const result = await loadPreviousShifts();
-
-    statusEl.textContent =
-      "LINE認証済み：" + result.castName;
-
-    setControlsEnabled(true);
+    await checkLinkStatus();
 
   } catch (error) {
     statusEl.textContent =
       "読み込みエラー：" + error.message;
 
-    showResult(
-      "安全のため提出を停止しています。" +
+    showLinkResult(
       "画面を開き直してください。",
       false
     );
@@ -482,14 +739,12 @@ async function submitShifts() {
     return;
   }
 
-  const idToken = liff.getIDToken();
+  let idToken;
 
-  if (!idToken) {
-    showResult(
-      "LINE認証情報を取得できませんでした。" +
-      "画面を開き直してください。",
-      false
-    );
+  try {
+    idToken = getIdToken();
+  } catch (error) {
+    showResult(error.message, false);
     return;
   }
 
@@ -533,6 +788,16 @@ async function submitShifts() {
     setControlsEnabled(true);
   }
 }
+
+linkButton.addEventListener(
+  "click",
+  requestLink
+);
+
+checkButton.addEventListener(
+  "click",
+  checkLinkStatus
+);
 
 submitBtn.addEventListener(
   "click",
