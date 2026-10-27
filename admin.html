@@ -69,6 +69,16 @@ input,textarea{border:1px solid #dce2eb;border-radius:8px;padding:10px;font-size
 [hidden]{display:none!important}
 @media(min-width:700px){.person-list{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:600px){.week strong{font-size:14px}}
+
+/* LINE連携申請 */
+.link-request{border:1px solid #e2e7ef;border-radius:11px;padding:14px;margin:10px 0;background:#fafbfc}
+.link-request strong{font-size:16px}
+.link-request p{font-size:13px;line-height:1.7;margin:7px 0;color:#596579;overflow-wrap:anywhere}
+.link-actions{display:flex;gap:8px;margin-top:12px}
+.link-actions button{flex:1;font-weight:bold}
+.link-approve{background:#087a4a;color:#fff;border-color:#087a4a}
+.link-reject{background:#fff;color:#b42d3b;border-color:#e8b9c0}
+.link-alert{font-size:13px;color:#b42d3b;font-weight:bold}
 </style>
 </head>
 <body>
@@ -128,9 +138,22 @@ input,textarea{border:1px solid #dce2eb;border-radius:8px;padding:10px;font-size
 <div id="dayDetails"></div>
 </div>
 
+<div class="section" id="lineLinkPanel">
+<h2>個人LINE連携申請 <span id="lineLinkCount" class="badge partial">確認中</span></h2>
+<p style="font-size:13px;color:#667085;line-height:1.7">キャスト本人を確認してから承認してください。承認後はキャストがLINEからシフトを提出できます。</p>
+<div class="controls">
+<button type="button" id="reloadLineLinks">申請を更新 ↻</button>
+</div>
+<p id="lineLinkMessage" role="status" style="font-size:13px;white-space:pre-wrap;line-height:1.7"></p>
+<div id="lineLinkList"></div>
+</div>
+
 <div class="section">
 <h2>LINE一括送信</h2>
-<div class="controls" style="align-items:center"><label><input type="radio" name="sendMode" value="group" checked> グループLINE（メイン）</label><label><input type="radio" name="sendMode" value="individual"> 個人LINE</label></div>
+<div class="controls" style="align-items:center">
+<label><input type="radio" name="sendMode" value="group" checked> グループLINE（メイン）</label>
+<label><input type="radio" name="sendMode" value="individual"> 個人LINE</label>
+</div>
 <p id="groupStatus" style="font-size:12px;color:#667085">グループ連携状況を確認中...</p>
 <div class="target-panel">
 <div style="font-size:13px;font-weight:bold">選択中のキャスト</div>
@@ -208,7 +231,11 @@ const SUPABASE_KEY =
 const FUNCTION_URL =
 SUPABASE_URL + "/functions/v1/virgo-admin-data";
 
-const GROUP_BULK_URL = SUPABASE_URL + "/functions/v1/virgo-line-group-bulk-send";
+const LINE_LINK_ADMIN_URL =
+SUPABASE_URL + "/functions/v1/virgo-admin-data";
+
+const GROUP_BULK_URL =
+SUPABASE_URL + "/functions/v1/virgo-line-group-bulk-send";
 
 const BULK_URL =
 SUPABASE_URL + "/functions/v1/virgo-line-bulk-send";
@@ -240,6 +267,8 @@ let sending = false;
 let sendMode = "group";
 let linkedGroups = new Map();
 let groupStatusReady = false;
+let lineLinkBusy = false;
+let lineLinkRequestNumber = 0;
 
 const selectedTargets = new Set();
 
@@ -297,6 +326,8 @@ function showLogin(message = "") {
   $("loginScreen").hidden = false;
   $("loginError").textContent = message;
   $("password").value = "";
+  lineLinkRequestNumber++;
+  $("lineLinkList").replaceChildren();
 }
 
 function showApp(user) {
@@ -308,6 +339,7 @@ function showApp(user) {
   $("appScreen").hidden = false;
   render();
   loadRemote();
+  loadLineLinks();
 }
 
 function renderTargets() {
@@ -318,8 +350,16 @@ function renderTargets() {
     : "まだ選択されていません";
   $("clearTargets").disabled = sending || selected.length === 0;
   $("bulkSendButton").disabled = sending;
-  $("bulkSendButton").textContent = sending ? "送信中..." : (sendMode === "group" ? "選択したグループLINEに送信" : "選択した個人LINEに送信");
-  $("groupStatus").textContent = sendMode === "group" ? (groupStatusReady ? "グループ連携済み：" + linkedGroups.size + "人（未連携は自動除外）" : "グループ連携状況を確認中...") : "個人LINE宛てに送信します";
+  $("bulkSendButton").textContent = sending
+    ? "送信中..."
+    : (sendMode === "group"
+      ? "選択したグループLINEに送信"
+      : "選択した個人LINEに送信");
+  $("groupStatus").textContent = sendMode === "group"
+    ? (groupStatusReady
+      ? "グループ連携済み：" + linkedGroups.size + "人（未連携は自動除外）"
+      : "グループ連携状況を確認中...")
+    : "個人LINE宛てに送信します";
 }
 
 function getDayGroups() {
@@ -582,6 +622,7 @@ function render() {
 
     const badge = document.createElement("span");
     badge.className = "badge " + (
+
       complete ? "done" :
       filled > 0 ? "partial" : "missing"
     );
@@ -953,6 +994,128 @@ $("bulkSendButton").addEventListener("click",async() => {
   }
 });
 
+
+// 管理者のLINE連携申請を取得・審査する
+async function callLineLinkAdmin(payload) {
+  const {data:{session},error} = await supabase.auth.getSession();
+  if (error || !session?.access_token || session.user.id !== currentUserId) {
+    throw new Error("管理者として再ログインしてください");
+  }
+  const response = await fetch(LINE_LINK_ADMIN_URL, {
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "apikey":SUPABASE_KEY,
+      "Authorization":"Bearer " + session.access_token
+    },
+    body:JSON.stringify(payload)
+  });
+  const result = await response.json();
+  if (!response.ok || result.success !== true) {
+    throw new Error(result.message || "申請処理に失敗しました");
+  }
+  return result;
+}
+
+async function loadLineLinks() {
+  if (!currentUserId || $("appScreen").hidden || lineLinkBusy) return;
+  const number = ++lineLinkRequestNumber;
+  const userId = currentUserId;
+  $("lineLinkMessage").textContent = "申請を確認しています...";
+  $("reloadLineLinks").disabled = true;
+  try {
+    const result = await callLineLinkAdmin({action:"listLineLinks"});
+    if (number !== lineLinkRequestNumber || userId !== currentUserId) return;
+    if (!Array.isArray(result.requests)) throw new Error("申請データが不正です");
+    renderLineLinks(result.requests);
+    $("lineLinkMessage").textContent = result.requests.length
+      ? "承認前に必ず本人確認をしてください。"
+      : "現在、承認待ちの申請はありません。";
+  } catch (error) {
+    if (number !== lineLinkRequestNumber || userId !== currentUserId) return;
+    $("lineLinkMessage").textContent = "取得エラー：" + error.message;
+    $("lineLinkCount").textContent = "取得失敗";
+  } finally {
+    if (number === lineLinkRequestNumber) $("reloadLineLinks").disabled = false;
+  }
+}
+
+function renderLineLinks(requests) {
+  const list = $("lineLinkList");
+  list.replaceChildren();
+  $("lineLinkCount").textContent = "承認待ち " + requests.length + "件";
+  for (const request of requests) {
+    const item = document.createElement("div");
+    item.className = "link-request";
+    const name = document.createElement("strong");
+    name.textContent = request.castName || "名前未入力";
+    const info = document.createElement("p");
+    info.textContent = "LINE表示名：" + (request.lineDisplayName || "未取得") +
+      " / 申請日時：" + (request.createdAt
+        ? new Date(request.createdAt).toLocaleString("ja-JP") : "不明");
+    item.append(name,info);
+    const warning = document.createElement("p");
+    warning.className = "link-alert";
+    if (request.matchCount !== 1) {
+      warning.textContent = "登録キャスト名が一致しないか、同名が複数います。承認できません。";
+    } else if (request.alreadyLinked) {
+      warning.textContent = "このキャストはすでにLINE連携済みです。";
+    } else {
+      warning.textContent = "本人確認をしてから承認してください。";
+    }
+    item.appendChild(warning);
+    const actions = document.createElement("div");
+    actions.className = "link-actions";
+    const approve = document.createElement("button");
+    approve.type = "button";
+    approve.className = "link-approve";
+    approve.textContent = "承認する";
+    approve.disabled = request.matchCount !== 1 || Boolean(request.alreadyLinked);
+    const reject = document.createElement("button");
+    reject.type = "button";
+    reject.className = "link-reject";
+    reject.textContent = "却下する";
+    approve.addEventListener("click", () => reviewLineLink(request,"approve"));
+    reject.addEventListener("click", () => reviewLineLink(request,"reject"));
+    actions.append(approve,reject);
+    item.appendChild(actions);
+    list.appendChild(item);
+  }
+}
+
+async function reviewLineLink(request, decision) {
+  if (lineLinkBusy || !currentUserId) return;
+  const approve = decision === "approve";
+  const question = approve
+    ? "【本人確認済みですか？】\n\nキャスト：" + request.castName +
+      "\nLINE表示名：" + (request.lineDisplayName || "未取得") +
+      "\n\nこのLINEアカウントを連携しますか？"
+    : "キャスト「" + request.castName + "」の申請を却下しますか？";
+  if (!confirm(question)) return;
+  lineLinkBusy = true;
+  lineLinkRequestNumber++;
+  $("reloadLineLinks").disabled = true;
+  $("lineLinkList").querySelectorAll("button").forEach(b => b.disabled = true);
+  $("lineLinkMessage").textContent = "処理中です...";
+  try {
+    const result = await callLineLinkAdmin({
+      action:"reviewLineLink",
+      requestId:request.id,
+      decision
+    });
+    $("lineLinkMessage").textContent = result.message || "処理が完了しました";
+  } catch (error) {
+    $("lineLinkMessage").textContent = "処理エラー：" + error.message +
+      "\n再操作する前に登録状況を確認してください。";
+  } finally {
+    lineLinkBusy = false;
+    $("reloadLineLinks").disabled = false;
+    await loadLineLinks();
+  }
+}
+
+$("reloadLineLinks").addEventListener("click",loadLineLinks);
+
 // ログイン
 $("loginForm").addEventListener("submit",async event => {
   event.preventDefault();
@@ -1012,6 +1175,7 @@ $("prevWeek").addEventListener("click",() => changeWeek(-1));
 $("nextWeek").addEventListener("click",() => changeWeek(1));
 $("thisWeek").addEventListener("click",goThisWeek);
 $("refreshButton").addEventListener("click",loadRemote);
+$("refreshButton").addEventListener("click",loadLineLinks);
 
 $("filter").addEventListener("click",() => {
   onlyMissing = !onlyMissing;
@@ -1040,6 +1204,7 @@ setInterval(() => {
     !sending
   ) {
     loadRemote();
+    loadLineLinks();
   }
 },30000);
 
