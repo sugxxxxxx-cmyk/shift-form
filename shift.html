@@ -5,12 +5,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>週間シフト提出 | Virgo</title>
-
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-
 <style>
 * { box-sizing: border-box; }
-
 body {
   margin: 0;
   padding: 20px 14px;
@@ -18,7 +15,6 @@ body {
   color: #222;
   font-family: -apple-system, BlinkMacSystemFont, sans-serif;
 }
-
 .card {
   max-width: 480px;
   margin: 15px auto;
@@ -26,9 +22,7 @@ body {
   background: white;
   border-radius: 18px;
 }
-
 h2 { text-align: center; }
-
 .status {
   padding: 14px;
   background: #f1f3f6;
@@ -37,7 +31,6 @@ h2 { text-align: center; }
   margin-bottom: 16px;
   line-height: 1.6;
 }
-
 .notice {
   padding: 13px;
   background: #eaf8ef;
@@ -47,7 +40,6 @@ h2 { text-align: center; }
   font-size: 14px;
   margin-bottom: 14px;
 }
-
 .saved-notice {
   display: none;
   padding: 13px;
@@ -59,32 +51,28 @@ h2 { text-align: center; }
   font-weight: 600;
   line-height: 1.6;
 }
-
 .day {
   padding: 14px 0;
   border-bottom: 1px solid #eee;
 }
-
-.day label {
+.day > label {
   display: block;
   font-weight: bold;
   margin-bottom: 8px;
 }
-
-select, input {
+select, input, textarea {
   width: 100%;
   padding: 13px;
   font-size: 16px;
   border: 1px solid #ddd;
   border-radius: 10px;
   background: white;
+  font-family: inherit;
 }
-
-select:disabled {
+select:disabled, input:disabled, textarea:disabled {
   background: #f1f3f6;
   color: #777;
 }
-
 button {
   width: 100%;
   padding: 16px;
@@ -97,58 +85,47 @@ button {
   font-weight: bold;
   cursor: pointer;
 }
-
 button:disabled {
   background: #ccc;
   cursor: not-allowed;
 }
-
 .secondary-button {
   background: #eef1f4;
   color: #333;
   margin-top: 12px;
 }
-
 #result, #linkResult {
   white-space: pre-line;
   line-height: 1.8;
   font-size: 14px;
 }
-
 .success {
   color: #087a4a;
   font-weight: bold;
 }
-
 .error {
   color: #d33b48;
   font-weight: bold;
 }
-
 .hidden { display: none !important; }
-
 .link-box {
   padding: 18px;
   background: #f7f9fb;
   border-radius: 14px;
 }
-
 .link-box h3 {
   margin-top: 0;
   text-align: center;
 }
-
 .link-box p {
   font-size: 14px;
   line-height: 1.7;
 }
-
 .link-box label {
   display: block;
   font-weight: bold;
   margin-bottom: 8px;
 }
-
 .pending {
   background: #fff8e5;
   border-radius: 12px;
@@ -156,19 +133,40 @@ button:disabled {
   text-align: center;
   line-height: 1.8;
 }
-
-.pending strong {
-  color: #996600;
-}
-
+.pending strong { color: #996600; }
 .small {
   font-size: 12px;
   color: #777;
   line-height: 1.6;
 }
+.douhan-details {
+  margin-top: 12px;
+  padding: 16px;
+  border: 1px solid #ccebd7;
+  border-radius: 12px;
+  background: #f5fcf7;
+}
+.douhan-title {
+  font-weight: 700;
+  color: #19653a;
+  margin-bottom: 12px;
+}
+.douhan-details label {
+  display: block;
+  font-weight: 600;
+  margin-top: 14px;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+.douhan-details label:first-child { margin-top: 0; }
+.douhan-hint {
+  font-size: 12px;
+  color: #617064;
+  margin-top: 10px;
+  line-height: 1.6;
+}
 </style>
 </head>
-
 <body>
 
 <div class="card">
@@ -236,10 +234,9 @@ button:disabled {
     </div>
 
     <div id="savedNotice" class="saved-notice"></div>
-
     <div id="week"></div>
 
-    <button id="submit" disabled>
+    <button id="submit" type="button" disabled>
       読み込み中...
     </button>
 
@@ -268,13 +265,10 @@ const linkButton = document.getElementById("linkButton");
 const linkResult = document.getElementById("linkResult");
 const pendingName = document.getElementById("pendingName");
 const checkButton = document.getElementById("checkButton");
-
 const weekEl = document.getElementById("week");
 const submitBtn = document.getElementById("submit");
 const resultEl = document.getElementById("result");
-const savedNoticeEl =
-  document.getElementById("savedNotice");
-
+const savedNoticeEl = document.getElementById("savedNotice");
 
 const choices = [
   "21:00",
@@ -286,7 +280,6 @@ const choices = [
   "休み"
 ];
 
-
 const weekdays = [
   "日", "月", "火", "水", "木", "金", "土"
 ];
@@ -296,7 +289,7 @@ const dates = [];
 let sending = false;
 let ready = false;
 let hasSavedShifts = false;
-let loadedValues = [];
+let loadedValues = "";
 let checking = false;
 let requesting = false;
 
@@ -304,13 +297,21 @@ function formatDate(date) {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");
-
   return `${y}-${m}-${d}`;
+}
+
+function defaultDouhan() {
+  return {
+    arrival_time: "未定",
+    keep_bottle: "不明",
+    neck_name: "",
+    brand: "",
+    notes: ""
+  };
 }
 
 function makeWeek() {
   const today = new Date();
-
   const daysUntilNextMonday =
     (8 - today.getDay()) % 7 || 7;
 
@@ -336,7 +337,6 @@ function makeWeek() {
 
     const label = document.createElement("label");
     label.htmlFor = "shift" + i;
-
     label.textContent =
       `${date.getMonth() + 1}/${date.getDate()}` +
       `（${weekdays[date.getDay()]}）`;
@@ -357,10 +357,154 @@ function makeWeek() {
       select.appendChild(option);
     });
 
+    const detail = document.createElement("div");
+    detail.id = "douhan" + i;
+    detail.className = "douhan-details hidden";
+
+    detail.innerHTML = `
+      <div class="douhan-title">同伴詳細</div>
+
+      <label for="arrival${i}">入店予定時間</label>
+      <select id="arrival${i}">
+        <option value="未定">未定</option>
+        <option value="21:00">21:00</option>
+        <option value="21:30">21:30</option>
+        <option value="22:00">22:00</option>
+      </select>
+
+      <label for="keep${i}">キープボトル</label>
+      <select id="keep${i}">
+        <option value="不明">不明</option>
+        <option value="あり">あり</option>
+        <option value="なし">なし</option>
+      </select>
+
+      <div id="bottleExtra${i}" class="hidden">
+        <label for="neck${i}">ネック名</label>
+        <input
+          id="neck${i}"
+          type="text"
+          maxlength="100"
+          placeholder="例：山田様"
+        >
+
+        <label for="brand${i}">
+          銘柄（焼酎・ウイスキーなど）
+        </label>
+        <input
+          id="brand${i}"
+          type="text"
+          maxlength="100"
+          placeholder="例：吉四六、白州"
+        >
+      </div>
+
+      <label for="notes${i}">その他・備考（任意）</label>
+      <input
+        id="notes${i}"
+        type="text"
+        maxlength="300"
+        placeholder="例：お客様2名、時間変更の可能性あり"
+      >
+
+      <div class="douhan-hint">
+        キープボトルが「あり」の場合だけ、
+        ネック名・銘柄を入力できます。
+      </div>
+    `;
+
+    select.addEventListener(
+      "change",
+      () => updateDouhanVisibility(i)
+    );
+
+    detail.querySelector("#keep" + i).addEventListener(
+      "change",
+      () => updateDouhanVisibility(i)
+    );
+
     div.appendChild(label);
     div.appendChild(select);
+    div.appendChild(detail);
     weekEl.appendChild(div);
   }
+}
+
+function updateDouhanVisibility(i) {
+  const time =
+    document.getElementById("shift" + i).value;
+
+  const keep =
+    document.getElementById("keep" + i).value;
+
+  const isDouhan = time === "同伴";
+
+  document.getElementById("douhan" + i)
+    .classList.toggle("hidden", !isDouhan);
+
+  document.getElementById("bottleExtra" + i)
+    .classList.toggle(
+      "hidden",
+      !isDouhan || keep !== "あり"
+    );
+}
+
+function setDouhanValues(i, details) {
+  const d = details || defaultDouhan();
+
+  const arrivalOptions = [
+    "未定", "21:00", "21:30", "22:00"
+  ];
+
+  const keepOptions = [
+    "あり", "なし", "不明"
+  ];
+
+  document.getElementById("arrival" + i).value =
+    arrivalOptions.includes(d.arrival_time)
+      ? d.arrival_time
+      : "未定";
+
+  document.getElementById("keep" + i).value =
+    keepOptions.includes(d.keep_bottle)
+      ? d.keep_bottle
+      : "不明";
+
+  document.getElementById("neck" + i).value =
+    d.neck_name || "";
+
+  document.getElementById("brand" + i).value =
+    d.brand || "";
+
+  document.getElementById("notes" + i).value =
+    d.notes || "";
+
+  updateDouhanVisibility(i);
+}
+
+function getDouhanValues(i) {
+  const keep =
+    document.getElementById("keep" + i).value;
+
+  return {
+    arrival_time:
+      document.getElementById("arrival" + i).value,
+
+    keep_bottle: keep,
+
+    neck_name:
+      keep === "あり"
+        ? document.getElementById("neck" + i).value.trim()
+        : "",
+
+    brand:
+      keep === "あり"
+        ? document.getElementById("brand" + i).value.trim()
+        : "",
+
+    notes:
+      document.getElementById("notes" + i).value.trim()
+  };
 }
 
 function showSection(section) {
@@ -377,9 +521,19 @@ function setControlsEnabled(enabled) {
   ready = enabled;
 
   dates.forEach((_, i) => {
-    document.getElementById(
-      "shift" + i
-    ).disabled = !enabled;
+    document.getElementById("shift" + i).disabled =
+      !enabled;
+
+    [
+      "arrival",
+      "keep",
+      "neck",
+      "brand",
+      "notes"
+    ].forEach(prefix => {
+      document.getElementById(prefix + i).disabled =
+        !enabled;
+    });
   });
 
   submitBtn.disabled = !enabled || sending;
@@ -392,12 +546,22 @@ function setControlsEnabled(enabled) {
 }
 
 function getShifts() {
-  return dates.map((date, i) => ({
-    date,
-    time: document.getElementById(
-      "shift" + i
-    ).value
-  }));
+  return dates.map((date, i) => {
+    const time =
+      document.getElementById("shift" + i).value;
+
+    return {
+      date,
+      time,
+      ...(time === "同伴"
+        ? { douhan: getDouhanValues(i) }
+        : {})
+    };
+  });
+}
+
+function snapshot(shifts) {
+  return JSON.stringify(shifts);
 }
 
 function showResult(message, success) {
@@ -489,20 +653,23 @@ async function loadPreviousShifts() {
       );
     }
 
-    savedMap.set(shift.date, shift.time);
+    savedMap.set(shift.date, shift);
   }
 
   hasSavedShifts = savedMap.size > 0;
 
   dates.forEach((date, i) => {
-    const select = document.getElementById(
-      "shift" + i
-    );
+    const select =
+      document.getElementById("shift" + i);
 
-    select.value = savedMap.get(date) || "";
+    const saved = savedMap.get(date);
+
+    select.value = saved?.time || "";
+
+    setDouhanValues(i, saved?.douhan);
   });
 
-  loadedValues = getShifts().map(s => s.time);
+  loadedValues = snapshot(getShifts());
 
   if (hasSavedShifts) {
     savedNoticeEl.style.display = "block";
@@ -687,7 +854,6 @@ async function start() {
     }
 
     getIdToken();
-
     await checkLinkStatus();
 
   } catch (error) {
@@ -718,22 +884,36 @@ async function submitShifts() {
 
   const unchanged =
     hasSavedShifts &&
-    shifts.every(
-      (shift, i) => shift.time === loadedValues[i]
-    );
+    snapshot(shifts) === loadedValues;
 
   if (unchanged) {
     showResult(
-      "前回のシフトから変更されていません。" +
-      "変更したい日を選択してください。",
+      "前回のシフトから変更されていません。",
       false
     );
     return;
   }
 
-  const summary = shifts
-    .map(s => s.date + "：" + s.time)
-    .join("\n");
+  const summary = shifts.map(s => {
+    if (s.time !== "同伴") {
+      return s.date + "：" + s.time;
+    }
+
+    const d = s.douhan;
+
+    return (
+      s.date + "：同伴" +
+      "\n  入店予定：" + d.arrival_time +
+      "\n  キープボトル：" + d.keep_bottle +
+      (d.keep_bottle === "あり"
+        ? "\n  ネック名：" + (d.neck_name || "未入力") +
+          "\n  銘柄：" + (d.brand || "未入力")
+        : "") +
+      (d.notes
+        ? "\n  備考：" + d.notes
+        : "")
+    );
+  }).join("\n\n");
 
   if (!confirm(
     "この内容でシフトを提出しますか？\n\n" +
@@ -764,7 +944,7 @@ async function submitShifts() {
     });
 
     hasSavedShifts = true;
-    loadedValues = shifts.map(s => s.time);
+    loadedValues = snapshot(shifts);
 
     savedNoticeEl.style.display = "block";
     savedNoticeEl.textContent =
